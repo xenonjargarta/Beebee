@@ -80,7 +80,50 @@
         "label": "Use vibration sensor (ADXL335) ",
         "checked": false
       },
-	  {
+      {
+        "name": "acc_datarate",
+        "type": "ACRadio",
+        "value": [
+          "3200",
+          "1600",
+          "800",
+          "400",
+          "200",
+          "100",
+          "50",
+          "25",
+          "12.50",
+          "6.25",
+          "3.13",
+          "1.56",
+          "0.78",
+          "0.39",
+          "0.20",
+          "0.10"
+        ],
+        "label": "Data Rate (Hz)",
+        "arrange": "vertical"
+      },
+      {
+        "name": "acc_range",
+        "type": "ACRadio",
+        "value": [
+          "16",
+          " 8",
+          " 4",
+          " 2"
+        ],
+        "label": "Range (g)",
+        "arrange": "vertical"
+      },
+      {
+        "name": "acc_usefullres",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use full resolution",
+        "checked": false
+      },
+	    {
         "name": "newline4",
         "type": "ACElement",
         "value": "<hr>"
@@ -174,6 +217,24 @@
         "name": "useRTCSensor",
         "type": "ACText",
         "format": "Use real time clock: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "acc_usefullres",
+        "type": "ACText",
+        "format": "Use full resolutin (10bit-13bit): %s",
+        "posterior": "br"
+      },
+      {
+        "name": "acc_range",
+        "type": "ACText",
+        "format": "Vibration Range (G): %s",
+        "posterior": "br"
+      },
+      {
+        "name": "acc_datarate",
+        "type": "ACText",
+        "format": "Vibration datra rate (Hz): %s",
         "posterior": "br"
       }
     ]

@@ -107,6 +107,9 @@ bool useVibrationSensor = false;
 bool useRTCSensor = false;
 bool setupReadyVibration = false;
 bool needToReboot = false;
+float acc_datarate = 3200.0f;
+bool acc_usefullres = false;
+int acc_range = 16;
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -341,10 +344,107 @@ void SetupVibration()                                                   //ADXL34
     else                                                                  //ADXL345
     {                                                                    //ADXL345
         /* Set the range to whatever is appropriate for your project */
-        accel.setRange(ADXL345_RANGE_16_G);                              //ADXL345
-        // accel.setRange(ADXL345_RANGE_8_G);                            //ADXL345
-        // accel.setRange(ADXL345_RANGE_4_G);                            //ADXL345
-        // accel.setRange(ADXL345_RANGE_2_G);                            //ADXL345
+        switch(acc_range)
+        {
+          case 16:
+             accel.setRange(ADXL345_RANGE_16_G); 
+             Serial.println("ADXL345_RANGE_16_G");
+          break;
+          case 8:
+             accel.setRange(ADXL345_RANGE_8_G); 
+             Serial.println("ADXL345_RANGE_8_G");
+          break;
+          case 4:
+             accel.setRange(ADXL345_RANGE_4_G); 
+             Serial.println("ADXL345_RANGE_4_G");
+          break;
+          case 2:
+             accel.setRange(ADXL345_RANGE_2_G); 
+             Serial.println("ADXL345_RANGE_2_G");
+          break;
+          default:
+             accel.setRange(ADXL345_RANGE_16_G); 
+             Serial.println("Unknown range. Use now ADXL345_RANGE_16_G");
+          break;    
+        }
+
+      //  accel.setFullRes(acc_usefullres);
+      //  Serial.print("Full resolution");Serial.println(acc_usefullres);
+          int sel = acc_datarate*100;
+          switch(sel)                   //ADXL345
+          {                                             //ADXL345
+            case 320000:              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_3200_HZ);
+              Serial.print  ("3200 ");                  //ADXL345 
+              break;                                    //ADXL345
+            case 160000:              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_1600_HZ);
+              Serial.print  ("1600 ");                  //ADXL345 
+              break;                                    //ADXL345
+            case 80000:              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_800_HZ);
+              Serial.print  ("800 ");                  //ADXL345 
+              break;                                    //ADXL345
+            case 40000:              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_400_HZ);
+              Serial.print  ("400 ");                  //ADXL345 
+              break;                                    //ADXL345
+            case 20000:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_200_HZ);
+              Serial.print  ("200 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 10000:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_100_HZ);
+              Serial.print  ("100 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 5000:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_50_HZ);
+              Serial.print  ("50 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 2500:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_25_HZ);
+              Serial.print  ("25 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 1250:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_12_5_HZ);
+              Serial.print  ("12.5 ");                   //ADXL345 
+              break;                                    //ADXL345
+
+            case 625:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_6_25HZ);
+              Serial.print  ("6.25 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 313:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_3_13_HZ);
+              Serial.print  ("3.13 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 156:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_1_56_HZ);
+              Serial.print  ("1.56 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 78:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_0_78_HZ);
+              Serial.print  ("0.78 ");                   //ADXL345 
+              break;                                    //ADXL345
+
+            case 39:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_0_39_HZ);
+              Serial.print  ("0.39 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 20:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_0_20_HZ);
+              Serial.print  ("0.20 ");                   //ADXL345 
+              break;                                    //ADXL345
+            case 10:                              //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_0_10_HZ);
+              Serial.print  ("0.10 ");                   //ADXL345 
+              break;                                    //ADXL345
+            default:                                    //ADXL345
+              accel.setDataRate(ADXL345_DATARATE_3200_HZ);
+              Serial.print  ("???? set to 3200 ");      //ADXL345
+              break;                                    //ADXL345
+            
+        }        
         
         /* Display some basic information on this sensor */
         displaySensorDetails();                                          //ADXL345
@@ -671,6 +771,11 @@ void getSensorParams(AutoConnectAux& aux)
   useTemperatureSensor  = aux[F("useTemperatureSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
   useVibrationSensor  = aux[F("useVibrationSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
   useRTCSensor  = aux[F("useRTCSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  AutoConnectRadio& dr = aux[F("acc_datarate")].as<AutoConnectRadio>(); // Autoconnect
+  acc_datarate = dr.value().toDouble();    // Autoconnect
+  acc_usefullres  = aux[F("acc_usefullres")].as<AutoConnectCheckbox>().checked; // Autoconnect
+  AutoConnectRadio& range = aux[F("acc_range")].as<AutoConnectRadio>(); // Autoconnect
+  acc_range = range.value().toInt();    // Autoconnect
 
   Serial.println(" ");                                              // Autoconnect 
   Serial.println("Curren Configuration:");                          // Autoconnect 
@@ -688,6 +793,17 @@ void getSensorParams(AutoConnectAux& aux)
   Serial.println(useVibrationSensor);                               // Autoconnect 
   Serial.print("Use RTC sensor: ");                                 // Autoconnect 
   Serial.println(useRTCSensor);                                     // Autoconnect 
+
+  Serial.print("acc_datarate: ");                                 // Autoconnect 
+  Serial.println(acc_datarate);                                     // Autoconnect 
+
+  Serial.print("acc_usefullres: ");                                 // Autoconnect 
+  Serial.println(acc_usefullres);                                     // Autoconnect 
+
+    Serial.print("acc_range: ");                                 // Autoconnect 
+  Serial.println(acc_range);                                     // Autoconnect 
+
+  
   Serial.println("CFG Loaded end");                                 // Autoconnect 
   Serial.println(" ");                                              // Autoconnect 
 }
@@ -761,6 +877,7 @@ String saveParams(AutoConnectAux& aux, PageArgument& args) {          // Autocon
   aux[F("apikey")].value = apiKey;                                                             // Autoconnect
   aux[F("period")].value = String(publishInterval / 1000);                                     // Autoconnect
 
+
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect
 
@@ -779,7 +896,7 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor"});     // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres"});     // Autoconnect
   param.close();                                                      // Autoconnect
   needToReboot = true;                                                // Autoconnect
   Serial.println("Need to reboot device");                            // Autoconnect
@@ -792,6 +909,11 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("useTemperatureSensor")].value = useTemperatureSensor;                                 // Autoconnect
   aux[F("useVibrationSensor")].value = useVibrationSensor;                                     // Autoconnect
   aux[F("useRTCSensor")].value = useRTCSensor;                                                 // Autoconnect
+
+  aux[F("acc_datarate")].value = acc_datarate;                                 // Autoconnect
+  aux[F("acc_range")].value = acc_range;                                     // Autoconnect
+  aux[F("acc_usefullres")].value = acc_usefullres;                                                 // Autoconnect
+
 
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect
