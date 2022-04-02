@@ -304,7 +304,7 @@ void SetupHumadity()
 
 void SetupRTC()
 {
-      Wire.begin();
+      Wire.begin(18,23);      // RTC
 }
 
 void loop() 
