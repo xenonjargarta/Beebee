@@ -1,9 +1,9 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1205606/1966080  Bytes (61%) 
-                          Used memory for globale variabel 46692 Bytes (12%)
+                          Used programm memory 1208894/1966080  Bytes (61%) 
+                          Used memory for globale variabel 46740 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 280988 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 280940 Bytes (Max 327680 Bytes)
       
       Feature:            (x) Webpage 
                           (x) Wifi Lifecycle
@@ -99,9 +99,14 @@ bool  uniqueid;       // Autoconnect
 unsigned long publishInterval = 0;   // Autoconnect
 const char* userId = "anyone";       // Autoconnect
 
-String beenodename;    // Autoconnect
-String hivename;       // Autoconnect
-int deepSleepTime = TIME_TO_SLEEP;   // Autoconnect
+String beenodename = "dummy";    // Autoconnect
+String hivename = "dummy";       // Autoconnect
+int deepSleepTime = 20;   // Autoconnect
+bool useTemperatureSensor = false;
+bool useVibrationSensor = false;
+bool useRTCSensor = false;
+bool setupReadyVibration = false;
+bool needToReboot = false;
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -241,14 +246,20 @@ void setup()
   delay(1000);                  // ESP startup
   Serial.begin(115200);         // ESP Console
   Serial.println();             // ESP Console
-  Wire.begin(18,23);            // DS3231-RTC, ADXL234
   SetupAutoConnect();           // Autoconnect
-  SetupVibration();             // Vibration
+  if(useRTCSensor == true || useVibrationSensor == true) // DS3231-RTC, ADXL234
+   { 
+      Wire.begin(18,23);
+      Serial.println("done");
+   }            // DS3231-RTC, ADXL234
+  
+  if(useVibrationSensor) { SetupVibration(); }             // Vibration
   SetupCommunication();         // Communication
   SetupPowerManagement();       // Power
   SetupHumadity();              // Humadity
-  SetupRTC();                   // RTC
-  if(useDeepSleep)  SetupDeepSleep();             // DeepSleep
+  if(useRTCSensor) {  SetupRTC();     }              // RTC
+  if(useDeepSleep) { SetupDeepSleep(); }            // DeepSleep
+  if(useTemperatureSensor) { SetupTemperature(); }    // Temperatur
 }
 
 ////////// Setup function
@@ -323,29 +334,32 @@ void SetupVibration()                                                   //ADXL34
  /* Initialise the sensor */  
     if(!accel.begin())                                                  //ADXL345
     {                                                                   //ADXL345
-    /* There was a problem detecting the ADXL345 ... check your connections */
-    Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");//ADXL345
-    while(1);                                                           //ADXL345
-  }                                                                     //ADXL345
-
-  /* Set the range to whatever is appropriate for your project */
-  accel.setRange(ADXL345_RANGE_16_G);                                   //ADXL345
-  // accel.setRange(ADXL345_RANGE_8_G);                                 //ADXL345
-  // accel.setRange(ADXL345_RANGE_4_G);                                 //ADXL345
-  // accel.setRange(ADXL345_RANGE_2_G);                                 //ADXL345
-  
-  /* Display some basic information on this sensor */
-  displaySensorDetails();                                               //ADXL345
-  
-  /* Display additional settings (outside the scope of sensor_t) */
-  displayDataRate();                                                    //ADXL345
-  displayRange();                                                       //ADXL345
-  Serial.println("");                                                   //ADXL345
+        /* There was a problem detecting the ADXL345 ... check your connections */
+        Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");//ADXL345
+        useVibrationSensor = false;                                         //ADXL345
+    }
+    else                                                                  //ADXL345
+    {                                                                    //ADXL345
+        /* Set the range to whatever is appropriate for your project */
+        accel.setRange(ADXL345_RANGE_16_G);                              //ADXL345
+        // accel.setRange(ADXL345_RANGE_8_G);                            //ADXL345
+        // accel.setRange(ADXL345_RANGE_4_G);                            //ADXL345
+        // accel.setRange(ADXL345_RANGE_2_G);                            //ADXL345
+        
+        /* Display some basic information on this sensor */
+        displaySensorDetails();                                          //ADXL345
+        
+        /* Display additional settings (outside the scope of sensor_t) */
+        displayDataRate();                                               //ADXL345
+        displayRange();                                                  //ADXL345
+        Serial.println("");                                              //ADXL345
+        setupReadyVibration = true;
+    }
 }
 
 void SetupTemperature()
 {
-    sensors.begin();  // OneWireTemperatur  
+    sensors.begin();                                                   // OneWireTemperatur  
 }
 
 void SetupWeigth()
@@ -398,14 +412,21 @@ void SetupRTC()
 void loop() 
 {
   HandleWebPage();              // Autoconnect
-  HandleTemperature(); 
-  HandleWeigth(); 
-  HandleVibration(); 
-  HandleCommunication(); 
-  HandlePowerManagement(); 
-  HandleHumadity(); 
-  HandleRTC();                  //DS3231-RTC
-  if(useDeepSleep) HandleDeepSleep();            //DeepSleep
+  if(!needToReboot)
+  {
+    if(useTemperatureSensor) { HandleTemperature(); }     //Temperatur
+    HandleWeigth(); 
+    if(useVibrationSensor && setupReadyVibration) { HandleVibration(); }  //ADXL345
+    HandleCommunication(); 
+    HandlePowerManagement(); 
+    HandleHumadity(); 
+    if(useRTCSensor) { HandleRTC();             }    //DS3231-RTC
+    if(useDeepSleep) { HandleDeepSleep();       }   //DeepSleep
+  }
+  else
+  {
+
+  }
 }
 
 ////////// Loop Functions 
@@ -647,14 +668,28 @@ void getSensorParams(AutoConnectAux& aux)
   hivename.trim();                                                     // Autoconnect
   useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // Autoconnect 
   deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // Autoconnect
+  useTemperatureSensor  = aux[F("useTemperatureSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  useVibrationSensor  = aux[F("useVibrationSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  useRTCSensor  = aux[F("useRTCSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
 
-  Serial.println();
-  Serial.println("Configuration:");
-  Serial.println(beenodename);
-  Serial.println(hivename);
-  Serial.println(useDeepSleep);  
-  Serial.println(deepSleepTime);
-  Serial.println("CFG Loaded end");
+  Serial.println(" ");                                              // Autoconnect 
+  Serial.println("Curren Configuration:");                          // Autoconnect 
+  Serial.print("Bee node name: ");                                  // Autoconnect 
+  Serial.println(beenodename);                                      // Autoconnect 
+  Serial.print("Hive name: ");                                      // Autoconnect 
+  Serial.println(hivename);                                         // Autoconnect 
+  Serial.print("Used deep sleep: ");                                // Autoconnect 
+  Serial.println(useDeepSleep);                                     // Autoconnect 
+  Serial.print("Deep sleep time: ");                                // Autoconnect 
+  Serial.println(deepSleepTime);                                    // Autoconnect 
+  Serial.print("Use temperature sensor: ");                         // Autoconnect 
+  Serial.println(useTemperatureSensor);                             // Autoconnect 
+  Serial.print("Use vibration sensor: ");                           // Autoconnect 
+  Serial.println(useVibrationSensor);                               // Autoconnect 
+  Serial.print("Use RTC sensor: ");                                 // Autoconnect 
+  Serial.println(useRTCSensor);                                     // Autoconnect 
+  Serial.println("CFG Loaded end");                                 // Autoconnect 
+  Serial.println(" ");                                              // Autoconnect 
 }
 
 // Load parameters saved with saveParams from SPIFFS into the
@@ -744,14 +779,19 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime"});     // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor"});     // Autoconnect
   param.close();                                                      // Autoconnect
+  needToReboot = true;                                                // Autoconnect
+  Serial.println("Need to reboot device");                            // Autoconnect
 
-  // Echo back saved parameters to AutoConnectAux page.
+ // Echo back saved parameters to AutoConnectAux page.
   aux[F("beenodename")].value = beenodename;                                                   // Autoconnect
   aux[F("hivename")].value = hivename;                                                         // Autoconnect
-  aux[F("deepSleepTime")].value = deepSleepTime;                                                 // Autoconnect
-  aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked = useDeepSleep;                   // Autoconnect
+  aux[F("deepSleepTime")].value = deepSleepTime;                                               // Autoconnect
+  aux[F("useDeepSleep")].value = useDeepSleep;                                                 // Autoconnect
+  aux[F("useTemperatureSensor")].value = useTemperatureSensor;                                 // Autoconnect
+  aux[F("useVibrationSensor")].value = useVibrationSensor;                                     // Autoconnect
+  aux[F("useRTCSensor")].value = useRTCSensor;                                                 // Autoconnect
 
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect

@@ -38,49 +38,20 @@
         "type": "ACElement",
         "value": "<hr>"
       },
-      {
-        "name": "uniqueid",
-        "type": "ACCheckbox",
-        "value": "unique",
-        "label": "Use DS18B20",
-        "checked": false
-      },
-      {
-        "name": "period",
-        "type": "ACRadio",
-        "value": [
-          "30 sec.",
-          "60 sec.",
-          "180 sec."
-        ],
-        "label": "Update period",
-        "arrange": "vertical"
-      },
 	  {
         "name": "newline1",
         "type": "ACElement",
         "value": "<hr>"
       },
 	  {
-        "name": "uniqueid1",
+        "name": "useWeigthSensor",
         "type": "ACCheckbox",
         "value": "unique",
         "label": "Use HX711",
         "checked": false
       },
-      {
-        "name": "period1",
-        "type": "ACRadio",
-        "value": [
-          "30 sec.",
-          "60 sec.",
-          "180 sec."
-        ],
-        "label": "Update period",
-        "arrange": "vertical"
-      },
-	  {
-        "name": "newline4",
+	    {
+        "name": "newline2",
         "type": "ACElement",
         "value": "<hr>"
       },
@@ -98,19 +69,43 @@
         "pattern": "^[0-9]$"
       },
 	  {
-        "name": "newline2",
+        "name": "newline3",
         "type": "ACElement",
         "value": "<hr>"
       },
  	  {
-        "name": "uniqueid3",
+        "name": "useVibrationSensor",
         "type": "ACCheckbox",
         "value": "unique",
-        "label": "Use ADXL335",
+        "label": "Use vibration sensor (ADXL335) ",
         "checked": false
       },
 	  {
-        "name": "newline3",
+        "name": "newline4",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "useTemperatureSensor",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use temperature sensor (DS)",
+        "checked": false
+      },
+      {
+        "name": "newline5",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "useRTCSensor",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use real time clock",
+        "checked": false
+      },
+	  {
+        "name": "newline6",
         "type": "ACElement",
         "value": "<hr>"
       },
@@ -136,7 +131,7 @@
       {
         "name": "caption",
         "type": "ACText",
-        "value": "<h4>Parameters saved as:</h4>",
+        "value": "<h4>You need to reboot the device. Parameters saved as:</h4>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
       },
       {
@@ -149,6 +144,36 @@
         "name": "hivename",
         "type": "ACText",
         "format": "Channel ID: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useDeepSleep",
+        "type": "ACText",
+        "format": "Use deep sleep: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "deepSleepTime",
+        "type": "ACText",
+        "format": "Deep sleep time: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useTemperatureSensor",
+        "type": "ACText",
+        "format": "Use temperature sensor: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useVibrationSensor",
+        "type": "ACText",
+        "format": "Use vibration sensor: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useRTCSensor",
+        "type": "ACText",
+        "format": "Use real time clock: %s",
         "posterior": "br"
       }
     ]
