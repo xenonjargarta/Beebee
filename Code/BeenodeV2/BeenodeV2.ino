@@ -37,7 +37,7 @@
 #include <WebServer.h>              // Autoconnect
 #include <FS.h>                     // Autoconnect
 #include <SPIFFS.h>                 // Autoconnect
-#include <DS3231.h>                 // DS3231
+#include <DS3231.h>                 // DS3231-RTC
 #include <OneWire.h>                // OneWireTemperatur
 #include <DallasTemperature.h>      // OneWireTemperatur
 
@@ -56,7 +56,7 @@ AutoConnectConfig config("NewBeeNode", "1234567890"); // Autoconnect
 // easily for each page in the post-upload handler.
 AutoConnectAux auxUpload;           // Autoconnect
 AutoConnectAux auxBrowse;           // Autoconnect
-RTClib myRTC;                       // DS3231
+RTClib myRTC;                       // DS3231-RTC
 
 // Data wire is plugged into digital pin 2 on the Arduino
 #define ONE_WIRE_BUS 19              // OneWireTemperatur
@@ -210,7 +210,7 @@ void setup()
   Serial.begin(115200);         // ESP Console
   Serial.println();             // ESP Console
 
-   Wire.begin(18,23);           // RTC, ADXL234
+  Wire.begin(18,23);           // DS3231-RTC, ADXL234
   SetupAutoConnect();           // Autoconnect
   SetupVibration();             // Vibration
   SetupCommunication();         // Communication
@@ -304,7 +304,7 @@ void SetupHumadity()
 
 void SetupRTC()
 {
-     
+     // Wire.begin was moved to Setup(). It is requird by ADXL and RTC
 }
 
 void loop() 
@@ -317,7 +317,7 @@ void loop()
   HandleDeepSleep(); 
   HandlePowerManagement(); 
   HandleHumadity(); 
-  HandleRTC();
+  HandleRTC();                  //DS3231-RTC
 }
 
 ////////// Loop Functions 
@@ -369,28 +369,28 @@ void HandleHumadity()
 
 void HandleRTC()
 {
-    delay(10);
+    delay(10);                                        //DS3231-RTC
     
-    DateTime now = myRTC.now();
+    DateTime now = myRTC.now();                       //DS3231-RTC
     
-    Serial.print(now.year(), DEC);
-    Serial.print('/');
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print(' ');
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    Serial.print(now.minute(), DEC);
-    Serial.print(':');
-    Serial.print(now.second(), DEC);
-    Serial.println();
+    Serial.print(now.year(), DEC);                    //DS3231-RTC
+    Serial.print('/');                                //DS3231-RTC
+    Serial.print(now.month(), DEC);                   //DS3231-RTC
+    Serial.print('/');                                //DS3231-RTC
+    Serial.print(now.day(), DEC);                     //DS3231-RTC
+    Serial.print(' ');                                //DS3231-RTC
+    Serial.print(now.hour(), DEC);                    //DS3231-RTC
+    Serial.print(':');                                //DS3231-RTC
+    Serial.print(now.minute(), DEC);                  //DS3231-RTC
+    Serial.print(':');                                //DS3231-RTC
+    Serial.print(now.second(), DEC);                  //DS3231-RTC
+    Serial.println();                                 //DS3231-RTC
     
-    Serial.print(" since midnight 1/1/1970 = ");
-    Serial.print(now.unixtime());
-    Serial.print("s = ");
-    Serial.print(now.unixtime() / 86400L);
-    Serial.println("d");
+    Serial.print(" since midnight 1/1/1970 = ");      //DS3231-RTC
+    Serial.print(now.unixtime());                     //DS3231-RTC
+    Serial.print("s = ");                             //DS3231-RTC
+    Serial.print(now.unixtime() / 86400L);            //DS3231-RTC
+    Serial.println("d");                              //DS3231-RTC
 }
 
 ///////////// Functions
