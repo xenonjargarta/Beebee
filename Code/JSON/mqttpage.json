@@ -1,0 +1,140 @@
+[
+  {
+    "title": "MQTT Setting",
+    "uri": "/mqtt_setting",
+    "menu": true,
+    "element": [
+      {
+        "name": "style",
+        "type": "ACStyle",
+        "value": "label+input,label+select{position:sticky;left:120px;width:230px!important;box-sizing:border-box;}"
+      },
+      {
+        "name": "header",
+        "type": "ACText",
+        "value": "<h2>MQTT broker settings</h2>",
+        "style": "text-align:center;color:#2f4f4f;padding:10px;"
+      },
+      {
+        "name": "caption",
+        "type": "ACText",
+        "value": "Publishing the WiFi signal strength to MQTT channel. RSSI value of BeeNode to the channel created on ThingSpeak",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "mqttserver",
+        "type": "ACInput",
+        "label": "Server",
+        "pattern": "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$",
+        "placeholder": "MQTT broker server"
+      },
+      {
+        "name": "channelid",
+        "type": "ACInput",
+        "label": "Channel ID",
+        "pattern": "^[0-9]{6}$"
+      },
+      {
+        "name": "userkey",
+        "type": "ACInput",
+        "label": "User Key"
+      },
+      {
+        "name": "apikey",
+        "type": "ACInput",
+        "label": "API Key"
+      },
+      {
+        "name": "newline",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "uniqueid",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use APID unique",
+        "checked": false
+      },
+      {
+        "name": "period",
+        "type": "ACRadio",
+        "value": [
+          "30 sec.",
+          "60 sec.",
+          "180 sec."
+        ],
+        "label": "Update period",
+        "arrange": "vertical"
+      },
+      {
+        "name": "hostname",
+        "type": "ACInput",
+        "value": "",
+        "label": "ESP host name",
+        "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9-])*[a-zA-Z0-9]){1,24}$"
+      },
+      {
+        "name": "save",
+        "type": "ACSubmit",
+        "value": "Save&amp;Start",
+        "uri": "/mqtt_save"
+      },
+      {
+        "name": "discard",
+        "type": "ACSubmit",
+        "value": "Discard",
+        "uri": "/"
+      }
+    ]
+  },
+  {
+    "title": "MQTT Setting",
+    "uri": "/mqtt_save",
+    "menu": false,
+    "element": [
+      {
+        "name": "caption",
+        "type": "ACText",
+        "value": "<h4>Parameters saved as:</h4>",
+        "style": "text-align:center;color:#2f4f4f;padding:10px;"
+      },
+      {
+        "name": "mqttserver",
+        "type": "ACText",
+        "format": "Server: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "channelid",
+        "type": "ACText",
+        "format": "Channel ID: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "userkey",
+        "type": "ACText",
+        "format": "User Key: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "apikey",
+        "type": "ACText",
+        "format": "API Key: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "period",
+        "type": "ACText",
+        "format": "Update period: %s sec.",
+        "posterior": "br"
+      },
+      {
+        "name": "clear",
+        "type": "ACSubmit",
+        "value": "Clear channel",
+        "uri": "/mqtt_clear"
+      }
+    ]
+  }
+]

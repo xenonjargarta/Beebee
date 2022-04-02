@@ -1,0 +1,136 @@
+[
+  {
+    "title": "Bee Node Setting",
+    "uri": "/sensor_setting",
+    "menu": true,
+    "element": 
+    [
+      {
+        "name": "style",
+        "type": "ACStyle",
+        "value": "label+input,label+select{position:sticky;left:120px;width:230px!important;box-sizing:border-box;}"
+      },
+      {
+        "name": "header",
+        "type": "ACText",
+        "value": "<h2>Bee Node Configuration</h2>",
+        "style": "text-align:center;color:#2f4f4f;padding:10px;"
+      },
+      {
+        "name": "caption",
+        "type": "ACText",
+        "value": "Setting for bee node and connection sensors",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "beenodename",
+        "type": "ACInput",
+        "label": "Bee Node Name",
+        "placeholder": "Bee Node XXX"
+      },
+      {
+        "name": "Hive Name",
+        "type": "ACInput",
+        "label": "Hive Name"
+      },
+      {
+        "name": "newline",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "uniqueid",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use DS18B20",
+        "checked": false
+      },
+      {
+        "name": "period",
+        "type": "ACRadio",
+        "value": [
+          "30 sec.",
+          "60 sec.",
+          "180 sec."
+        ],
+        "label": "Update period",
+        "arrange": "vertical"
+      },
+	  {
+        "name": "newline1",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+	  {
+        "name": "uniqueid1",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use HX711",
+        "checked": false
+      },
+      {
+        "name": "period1",
+        "type": "ACRadio",
+        "value": [
+          "30 sec.",
+          "60 sec.",
+          "180 sec."
+        ],
+        "label": "Update period",
+        "arrange": "vertical"
+      },
+	  {
+        "name": "newline4",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+	  	  {
+        "name": "uniqueid2",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use Deep Sleep",
+        "checked": false
+      },
+      {
+        "name": "period2",
+        "type": "ACRadio",
+        "value": [
+          "300 sec.",
+          "600 sec.",
+          "1800 sec."
+        ],
+        "label": "Update period",
+        "arrange": "vertical"
+      },
+	  {
+        "name": "newline2",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+ 	  {
+        "name": "uniqueid3",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use ADXL335",
+        "checked": false
+      },
+	  {
+        "name": "newline3",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "save",
+        "type": "ACSubmit",
+        "value": "Save&amp;Start",
+        "uri": "/sensor_save"
+      },
+      {
+        "name": "discard",
+        "type": "ACSubmit",
+        "value": "Discard",
+        "uri": "/"
+      }
+    ]
+  }
+]
