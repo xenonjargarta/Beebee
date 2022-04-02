@@ -101,6 +101,7 @@ const char* userId = "anyone";       // Autoconnect
 
 String beenodename;    // Autoconnect
 String hivename;       // Autoconnect
+int deepSleepTime = TIME_TO_SLEEP;   // Autoconnect
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -366,8 +367,8 @@ void SetupDeepSleep()                                                           
   First we configure the wake up source
   We set our ESP32 to wake up every 5 seconds
   */
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);                    //DeepSleep
-  Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) +      
+  esp_sleep_enable_timer_wakeup(deepSleepTime * uS_TO_S_FACTOR);                    //DeepSleep
+  Serial.println("Setup ESP32 to sleep for every " + String(deepSleepTime) +      
   " Seconds");                                                                      //DeepSleep
 
   /*
@@ -642,8 +643,18 @@ void getSensorParams(AutoConnectAux& aux)
 {
   beenodename = aux[F("beenodename")].value;                           // Autoconnect
   beenodename.trim();                                                  // Autoconnect
-  hivename = aux[F("hivename")].value;                               // Autoconnect
+  hivename = aux[F("hivename")].value;                                 // Autoconnect
   hivename.trim();                                                     // Autoconnect
+  useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // Autoconnect
+
+  Serial.println();
+  Serial.println("Configuration:");
+  Serial.println(beenodename);
+  Serial.println(hivename);
+  Serial.println(useDeepSleep);  
+  Serial.println(deepSleepTime);
+  Serial.println("CFG Loaded end");
 }
 
 // Load parameters saved with saveParams from SPIFFS into the
@@ -733,12 +744,14 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename"});     // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime"});     // Autoconnect
   param.close();                                                      // Autoconnect
 
   // Echo back saved parameters to AutoConnectAux page.
   aux[F("beenodename")].value = beenodename;                                                   // Autoconnect
   aux[F("hivename")].value = hivename;                                                         // Autoconnect
+  aux[F("deepSleepTime")].value = deepSleepTime;                                                 // Autoconnect
+  aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked = useDeepSleep;                   // Autoconnect
 
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect

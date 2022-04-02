@@ -85,22 +85,17 @@
         "value": "<hr>"
       },
 	  	  {
-        "name": "uniqueid2",
+        "name": "useDeepSleep",
         "type": "ACCheckbox",
         "value": "unique",
         "label": "Use Deep Sleep",
         "checked": false
       },
       {
-        "name": "period2",
-        "type": "ACRadio",
-        "value": [
-          "300 sec.",
-          "600 sec.",
-          "1800 sec."
-        ],
-        "label": "Update period",
-        "arrange": "vertical"
+        "name": "deepSleepTime",
+        "type": "ACInput",
+        "label": "Deep Sleep Time (Sec)",
+        "pattern": "^[0-9]$"
       },
 	  {
         "name": "newline2",
