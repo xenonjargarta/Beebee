@@ -1,6 +1,6 @@
 /*    
     Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                        Used programm memory 999426/1966080  Bytes (50%) 
+                        Used programm memory 999406/1966080  Bytes (50%) 
                         Used memory for globale variabel 41884 Bytes (12%)
                         Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
                         Still free memory for local variable 285796 Bytes (Max 327680 Bytes)
@@ -209,7 +209,8 @@ void setup()
   delay(1000);                  // ESP startup
   Serial.begin(115200);         // ESP Console
   Serial.println();             // ESP Console
-  
+
+   Wire.begin(18,23);           // RTC, ADXL234
   SetupAutoConnect();           // Autoconnect
   SetupVibration();             // Vibration
   SetupCommunication();         // Communication
@@ -256,30 +257,29 @@ void SetupAutoConnect()
 
 void SetupVibration()
 {
-   Serial.println("Accelerometer Test"); Serial.println("");
+   Serial.println("Accelerometer Test"); Serial.println("");                    //ADXL345
   
-  /* Initialise the sensor */
-  if(!accel.begin())
-  {
+ /* Initialise the sensor */  
+    if(!accel.begin())
+    {
     /* There was a problem detecting the ADXL345 ... check your connections */
     Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");
+    while(1);
   }
-  else
-  {
-    /* Set the range to whatever is appropriate for your project */
-    accel.setRange(ADXL345_RANGE_16_G);
-    // accel.setRange(ADXL345_RANGE_8_G);
-    // accel.setRange(ADXL345_RANGE_4_G);
-    // accel.setRange(ADXL345_RANGE_2_G);
-    
-    /* Display some basic information on this sensor */
-    displaySensorDetails();
-    
-    /* Display additional settings (outside the scope of sensor_t) */
-    displayDataRate();
-    displayRange();
-    Serial.println("");
-  }
+
+  /* Set the range to whatever is appropriate for your project */
+  accel.setRange(ADXL345_RANGE_16_G);
+  // accel.setRange(ADXL345_RANGE_8_G);
+  // accel.setRange(ADXL345_RANGE_4_G);
+  // accel.setRange(ADXL345_RANGE_2_G);
+  
+  /* Display some basic information on this sensor */
+  displaySensorDetails();
+  
+  /* Display additional settings (outside the scope of sensor_t) */
+  displayDataRate();
+  displayRange();
+  Serial.println("");
 }
 
 void SetupTemperature()
@@ -304,7 +304,7 @@ void SetupHumadity()
 
 void SetupRTC()
 {
-      Wire.begin(18,23);      // RTC
+     
 }
 
 void loop() 
@@ -344,7 +344,7 @@ void HandleWeigth()
 
 void HandleVibration()
 {
-  /* Get a new sensor event */ 
+ /* Get a new sensor event */ 
   sensors_event_t event; 
   accel.getEvent(&event);
  
@@ -352,7 +352,7 @@ void HandleVibration()
   Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print("  ");
   Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("  ");
   Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");Serial.println("m/s^2 ");
-  delay(500);  
+ delay(1000);
 }
 
 void HandleCommunication()
@@ -395,104 +395,104 @@ void HandleRTC()
 
 ///////////// Functions
 
-void displaySensorDetails(void)
-{
-  sensor_t sensor;
-  accel.getSensor(&sensor);
-  Serial.println("------------------------------------");
-  Serial.print  ("Sensor:       "); Serial.println(sensor.name);
-  Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);
-  Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
-  Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" m/s^2");
-  Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" m/s^2");
-  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" m/s^2");  
-  Serial.println("------------------------------------");
-  Serial.println("");
-  delay(500);
-}
+void displaySensorDetails(void)                                                     //ADXL345
+{                                                                                   //ADXL345
+  sensor_t sensor;                                                                  //ADXL345
+  accel.getSensor(&sensor);                                                         //ADXL345
+  Serial.println("------------------------------------");                           //ADXL345
+  Serial.print  ("Sensor:       "); Serial.println(sensor.name);                    //ADXL345
+  Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);                 //ADXL345
+  Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);               //ADXL345
+  Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" m/s^2");                 //ADXL345
+  Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" m/s^2");                 //ADXL345
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" m/s^2");                //ADXL345
+  Serial.println("------------------------------------");                 //ADXL345
+  Serial.println("");                                                     //ADXL345
+  delay(500);                                                             //ADXL345
+}                                                                         //ADXL345
 
-void displayDataRate(void)
-{
-  Serial.print  ("Data Rate:    "); 
-  
-  switch(accel.getDataRate())
-  {
-    case ADXL345_DATARATE_3200_HZ:
-      Serial.print  ("3200 "); 
-      break;
-    case ADXL345_DATARATE_1600_HZ:
-      Serial.print  ("1600 "); 
-      break;
-    case ADXL345_DATARATE_800_HZ:
-      Serial.print  ("800 "); 
-      break;
-    case ADXL345_DATARATE_400_HZ:
-      Serial.print  ("400 "); 
-      break;
-    case ADXL345_DATARATE_200_HZ:
-      Serial.print  ("200 "); 
-      break;
-    case ADXL345_DATARATE_100_HZ:
-      Serial.print  ("100 "); 
-      break;
-    case ADXL345_DATARATE_50_HZ:
-      Serial.print  ("50 "); 
-      break;
-    case ADXL345_DATARATE_25_HZ:
-      Serial.print  ("25 "); 
-      break;
-    case ADXL345_DATARATE_12_5_HZ:
-      Serial.print  ("12.5 "); 
-      break;
-    case ADXL345_DATARATE_6_25HZ:
-      Serial.print  ("6.25 "); 
-      break;
-    case ADXL345_DATARATE_3_13_HZ:
-      Serial.print  ("3.13 "); 
-      break;
-    case ADXL345_DATARATE_1_56_HZ:
-      Serial.print  ("1.56 "); 
-      break;
-    case ADXL345_DATARATE_0_78_HZ:
-      Serial.print  ("0.78 "); 
-      break;
-    case ADXL345_DATARATE_0_39_HZ:
-      Serial.print  ("0.39 "); 
-      break;
-    case ADXL345_DATARATE_0_20_HZ:
-      Serial.print  ("0.20 "); 
-      break;
-    case ADXL345_DATARATE_0_10_HZ:
-      Serial.print  ("0.10 "); 
-      break;
-    default:
-      Serial.print  ("???? "); 
-      break;
-  }  
-  Serial.println(" Hz");  
-}
+void displayDataRate(void)                      //ADXL345
+{                                               //ADXL345
+  Serial.print  ("Data Rate:    ");             //ADXL345
+                                                //ADXL345
+  switch(accel.getDataRate())                   //ADXL345
+  {                                             //ADXL345
+    case ADXL345_DATARATE_3200_HZ:              //ADXL345
+      Serial.print  ("3200 ");                  //ADXL345 
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_1600_HZ:              //ADXL345
+      Serial.print  ("1600 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_800_HZ:               //ADXL345
+      Serial.print  ("800 ");                   //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_400_HZ:               //ADXL345
+      Serial.print  ("400 ");                   //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_200_HZ:               //ADXL345
+      Serial.print  ("200 ");                   //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_100_HZ:               //ADXL345
+      Serial.print  ("100 ");                   //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_50_HZ:                //ADXL345
+      Serial.print  ("50 ");                    //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_25_HZ:                //ADXL345
+      Serial.print  ("25 ");                    //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_12_5_HZ:              //ADXL345
+      Serial.print  ("12.5 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_6_25HZ:               //ADXL345
+      Serial.print  ("6.25 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_3_13_HZ:              //ADXL345
+      Serial.print  ("3.13 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_1_56_HZ:              //ADXL345
+      Serial.print  ("1.56 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_0_78_HZ:              //ADXL345
+      Serial.print  ("0.78 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_0_39_HZ:              //ADXL345
+      Serial.print  ("0.39 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_0_20_HZ:              //ADXL345
+      Serial.print  ("0.20 ");                  //ADXL345
+      break;                                    //ADXL345
+    case ADXL345_DATARATE_0_10_HZ:              //ADXL345
+      Serial.print  ("0.10 ");                  //ADXL345
+      break;                                    //ADXL345
+    default:                                    //ADXL345
+      Serial.print  ("???? ");                  //ADXL345
+      break;                                    //ADXL345
+  }                                             //ADXL345
+  Serial.println(" Hz");                        //ADXL345
+}                                               //ADXL345
 
-void displayRange(void)
-{
-  Serial.print  ("Range:         +/- "); 
+void displayRange(void)                     //ADXL345
+{                                           //ADXL345
+  Serial.print  ("Range:         +/- ");    //ADXL345
   
-  switch(accel.getRange())
-  {
-    case ADXL345_RANGE_16_G:
-      Serial.print  ("16 "); 
-      break;
-    case ADXL345_RANGE_8_G:
-      Serial.print  ("8 "); 
-      break;
-    case ADXL345_RANGE_4_G:
-      Serial.print  ("4 "); 
-      break;
-    case ADXL345_RANGE_2_G:
-      Serial.print  ("2 "); 
-      break;
-    default:
-      Serial.print  ("?? "); 
-      break;
-  }  
-  Serial.println(" g");  
-}
+  switch(accel.getRange())                  //ADXL345
+  {                                         //ADXL345
+    case ADXL345_RANGE_16_G:                //ADXL345
+      Serial.print  ("16 ");                //ADXL345
+      break;                                //ADXL345
+    case ADXL345_RANGE_8_G:                 //ADXL345
+      Serial.print  ("8 ");                 //ADXL345
+      break;                                //ADXL345
+    case ADXL345_RANGE_4_G:                 //ADXL345
+      Serial.print  ("4 ");                 //ADXL345
+      break;                                //ADXL345
+    case ADXL345_RANGE_2_G:                 //ADXL345
+      Serial.print  ("2 ");                 //ADXL345
+      break;                                //ADXL345
+    default:                                //ADXL345
+      Serial.print  ("?? ");                //ADXL345
+      break;                                //ADXL345
+  }                                         //ADXL345
+  Serial.println(" g");                     //ADXL345
+}                                           //ADXL345
