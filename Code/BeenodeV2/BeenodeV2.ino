@@ -1,9 +1,9 @@
 /*    
     Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                        Used programm memory 1002257/1966080  Bytes (50%) 
-                        Used memory for globale variabel 41992 Bytes (12%)
+                        Used programm memory 999426/1966080  Bytes (50%) 
+                        Used memory for globale variabel 41884 Bytes (12%)
                         Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                        Still free memory for local variable 285688 Bytes (Max 327680 Bytes)
+                        Still free memory for local variable 285796 Bytes (Max 327680 Bytes)
     
     Feature:            (x) Webpage 
                         (x) Wifi Lifecycle
@@ -13,7 +13,7 @@
                         ( ) MQTT
                         (in progress) Vibration Sensor (ADXL345)
                         ( ) Weight Sensor (HX711)
-                        ( ) Temperature Sensor (DS)
+                        (in progress) Temperature Sensor (DS)
                         ( ) Humadity Sensor ()
                         (in progress) RTC (DS)
                         ( ) Power management
@@ -38,6 +38,8 @@
 #include <FS.h>                     // Autoconnect
 #include <SPIFFS.h>                 // Autoconnect
 #include <DS3231.h>                 // DS3231
+#include <OneWire.h>                // OneWireTemperatur
+#include <DallasTemperature.h>      // OneWireTemperatur
 
 // ------------------------------ Definitions (Global) ------------------------------------------
 #define FORMAT_ON_FAIL  true        // Autoconnect
@@ -55,6 +57,16 @@ AutoConnectConfig config("NewBeeNode", "1234567890"); // Autoconnect
 AutoConnectAux auxUpload;           // Autoconnect
 AutoConnectAux auxBrowse;           // Autoconnect
 RTClib myRTC;                       // DS3231
+
+// Data wire is plugged into digital pin 2 on the Arduino
+#define ONE_WIRE_BUS 19              // OneWireTemperatur
+
+// Setup a oneWire instance to communicate with any OneWire device
+OneWire oneWire(ONE_WIRE_BUS);       // OneWireTemperatur 
+
+// Pass oneWire reference to DallasTemperature library
+DallasTemperature sensors(&oneWire); // OneWireTemperatur
+
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
@@ -271,7 +283,9 @@ void SetupVibration()
 }
 
 void SetupTemperature()
-{}
+{
+    sensors.begin();  // OneWireTemperatur  
+}
 
 void SetupWeigth()
 {}
@@ -314,7 +328,16 @@ void HandleWebPage()
 }
 
 void HandleTemperature()
-{}
+{
+  // Send the command to get temperatures
+  sensors.requestTemperatures();                          //OneWireTemperature
+
+  //print the temperature in Celsius
+  Serial.print("Temperature: ");                          //OneWireTemperature
+  Serial.print(sensors.getTempCByIndex(0));               //OneWireTemperature
+  Serial.print((char)176);//shows degrees character       //OneWireTemperature
+  Serial.print("C  |  ");                                 //OneWireTemperature
+}
 
 void HandleWeigth()
 {}
