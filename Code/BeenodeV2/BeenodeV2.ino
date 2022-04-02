@@ -1,9 +1,9 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 999406/1966080  Bytes (50%) 
-                          Used memory for globale variabel 41884 Bytes (12%)
+                          Used programm memory 1007550/1966080  Bytes (50%) 
+                          Used memory for globale variabel 41948 Bytes (12%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 285796 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 285732 Bytes (Max 327680 Bytes)
       
       Feature:            (x) Webpage 
                           (x) Wifi Lifecycle
@@ -17,7 +17,7 @@
                           ( ) Humadity Sensor ()
                           (in progress) RTC (DS3231)
                           ( ) Power management
-                          ( ) Deep Sleep (ESP)
+                          (in progress) Deep Sleep (ESP)
                           ( ) Lora Communication
                           ( ) SIM Communication
                           (in progress) SD Card
@@ -67,6 +67,13 @@ OneWire oneWire(ONE_WIRE_BUS);       // OneWireTemperatur
 // Pass oneWire reference to DallasTemperature library
 DallasTemperature sensors(&oneWire); // OneWireTemperatur
 
+/* Conversion factor for micro seconds to seconds */
+#define uS_TO_S_FACTOR 1000000      //DeepSleep
+/* Time ESP32 will go to sleep (in seconds) */ 
+#define TIME_TO_SLEEP  10           //DeepSleep
+
+RTC_DATA_ATTR int bootCount = 0;    //DeepSleep
+bool useDeepSleep = false;
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
@@ -209,15 +216,14 @@ void setup()
   delay(1000);                  // ESP startup
   Serial.begin(115200);         // ESP Console
   Serial.println();             // ESP Console
-
-  Wire.begin(18,23);           // DS3231-RTC, ADXL234
+  Wire.begin(18,23);            // DS3231-RTC, ADXL234
   SetupAutoConnect();           // Autoconnect
   SetupVibration();             // Vibration
   SetupCommunication();         // Communication
-  SetupDeepSleep();             // DeepSleep
   SetupPowerManagement();       // Power
   SetupHumadity();              // Humadity
   SetupRTC();                   // RTC
+  if(useDeepSleep)  SetupDeepSleep();             // DeepSleep
 }
 
 ////////// Setup function
@@ -293,8 +299,35 @@ void SetupWeigth()
 void SetupCommunication()
 {}
 
-void SetupDeepSleep()
-{}
+void SetupDeepSleep()                                                               //DeepSleep
+{
+    //Increment boot number and print it every reboot                           
+  ++bootCount;                                                                      //DeepSleep
+  Serial.println("Boot number: " + String(bootCount));
+  
+  //Print the wakeup reason for ESP32
+  print_wakeup_reason();                                                            //DeepSleep
+
+  /*
+  First we configure the wake up source
+  We set our ESP32 to wake up every 5 seconds
+  */
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);                    //DeepSleep
+  Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) +      
+  " Seconds");                                                                      //DeepSleep
+
+  /*
+  Next we decide what all peripherals to shut down/keep on
+  By default, ESP32 will automatically power down the peripherals
+  not needed by the wakeup source, but if you want to be a poweruser
+  this is for you. Read in detail at the API docs
+  http://esp-idf.readthedocs.io/en/latest/api-reference/system/deep_sleep.html
+  Left the line commented as an example of how to configure peripherals.
+  The line below turns off all RTC peripherals in deep sleep.
+  */
+  //esp_deep_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);          //DeepSleep
+  //Serial.println("Configured all RTC Peripherals to be powered down in sleep");   //DeepSleep
+}                                                                                   //DeepSleep
 
 void SetupPowerManagement()
 {}
@@ -314,10 +347,10 @@ void loop()
   HandleWeigth(); 
   HandleVibration(); 
   HandleCommunication(); 
-  HandleDeepSleep(); 
   HandlePowerManagement(); 
   HandleHumadity(); 
   HandleRTC();                  //DS3231-RTC
+  if(useDeepSleep) HandleDeepSleep();            //DeepSleep
 }
 
 ////////// Loop Functions 
@@ -359,7 +392,21 @@ void HandleCommunication()
 {}
 
 void HandleDeepSleep()
-{}
+{
+  /*
+  Now that we have setup a wake cause and if needed setup the
+  peripherals state in deep sleep, we can now start going to
+  deep sleep.
+  In the case that no wake up sources were provided but deep
+  sleep was started, it will sleep forever unless hardware
+  reset occurs.
+  */
+  Serial.println("Going to sleep now");                                             //DeepSleep
+  delay(1000);                                                                      //DeepSleep
+  Serial.flush();                                                                   //DeepSleep
+  esp_deep_sleep_start();                                                           //DeepSleep
+  Serial.println("This will never be printed");                                     //DeepSleep
+}
 
 void HandlePowerManagement()
 {}
@@ -496,3 +543,24 @@ void displayRange(void)                     //ADXL345
   }                                         //ADXL345
   Serial.println(" g");                     //ADXL345
 }                                           //ADXL345
+
+/*
+Method to print the reason by which ESP32
+has been awaken from sleep
+*/
+void print_wakeup_reason()                            //DeepSleep
+{                                                     //DeepSleep
+  esp_sleep_wakeup_cause_t wakeup_reason;             //DeepSleep
+
+  wakeup_reason = esp_sleep_get_wakeup_cause();       //DeepSleep
+
+  switch(wakeup_reason)                               //DeepSleep
+  {                                                   //DeepSleep
+    case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); break;  //DeepSleep
+    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;//DeepSleep
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;                        //DeepSleep
+    case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;                  //DeepSleep
+    case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;                    //DeepSleep
+    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;            //DeepSleep
+  }                                                                                                       //DeepSleep
+}                                                                                                         //DeepSleep
