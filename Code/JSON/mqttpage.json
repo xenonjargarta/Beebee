@@ -18,7 +18,7 @@
       {
         "name": "caption",
         "type": "ACText",
-        "value": "Publishing the WiFi signal strength to MQTT channel. RSSI value of BeeNode to the channel created on ThingSpeak",
+        "value": "Publishing the WiFi signal strength to MQTT channel. RSSI value of ESP8266 to the channel created on ThingSpeak",
         "style": "font-family:serif;color:#4682b4;"
       },
       {

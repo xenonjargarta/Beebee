@@ -79,11 +79,14 @@ bool useDeepSleep = false;          //DeepSleep
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
 
-const char* PARAM_FILE              = "/param.json";        // Autoconnect
-const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";    // Autoconnect
-const char* AUX_SETTING_URI = "/mqtt_setting";              // Autoconnect
-const char* AUX_SAVE_URI    = "/mqtt_save";                 // Autoconnect
-const char* AUX_CLEAR_URI   = "/mqtt_clear";                // Autoconnect
+const char* PARAM_FILE              = "/param.json";         // Autoconnect
+const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
+const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
+const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
+const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect
+const char* AUX_SETTING_URI         = "/mqtt_setting";       // Autoconnect
+const char* AUX_SAVE_URI            = "/mqtt_save";          // Autoconnect
+const char* AUX_CLEAR_URI           = "/mqtt_clear";         // Autoconnect
 
 String  apId;         // Autoconnect
 String  hostName;     // Autoconnect
@@ -95,6 +98,9 @@ String  apiKey;       // Autoconnect
 bool  uniqueid;       // Autoconnect
 unsigned long publishInterval = 0;   // Autoconnect
 const char* userId = "anyone";       // Autoconnect
+
+String beenodename;    // Autoconnect
+String hivename;       // Autoconnect
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -271,7 +277,14 @@ void SetupAutoConnect()
   
   page.close();                                       // Autoconnect
   File page1 = SPIFFS.open("/sensorpage.json", "r");  // Autoconnect
-  portal.load(page1);                                 // Autoconnect
+  if(portal.load(page1))                              // Autoconnect
+  {                                                   // Autoconnect
+    PageArgument  args;                               // Autoconnect
+    AutoConnectAux& sensor_setting = *portal.aux(AUX_SENSOR_SETTING_URI);// Autoconnect
+    loadSensorParams(sensor_setting, args);                             // Autoconnect
+    portal.on(AUX_SENSOR_SETTING_URI, loadSensorParams);        // Autoconnect
+    portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);           // Autoconnect
+  }                                                             // Autoconnect
   page1.close();                                      // Autoconnect
   SPIFFS.end();                                       // Autoconnect
 
@@ -291,7 +304,7 @@ void SetupAutoConnect()
   // the link of the object tag, and the request can be caught by onNotFound handler.
   portal.onNotFound(handleFileRead);                // Autoconnect
   config.ota = AC_OTA_BUILTIN;                      // Autoconnect
-  config.title = "BeeNode 2A 020420221519";         // Autoconnect
+  config.title = beenodename + " 020420221625";     // Autoconnect
   config.homeUri = "/_ac";                          // Autoconnect
   config.bootUri = AC_ONBOOTURI_HOME;               // Autoconnect
   // Reconnect and continue publishing even if WiFi is disconnected.
@@ -624,6 +637,15 @@ void getParams(AutoConnectAux& aux)
   hostName.trim();                                                    // Autoconnect
 }
 
+
+void getSensorParams(AutoConnectAux& aux) 
+{
+  beenodename = aux[F("beenodename")].value;                           // Autoconnect
+  beenodename.trim();                                                  // Autoconnect
+  hivename = aux[F("hivename")].value;                               // Autoconnect
+  hivename.trim();                                                     // Autoconnect
+}
+
 // Load parameters saved with saveParams from SPIFFS into the
 // elements defined in /mqtt_setting JSON.
 String loadParams(AutoConnectAux& aux, PageArgument& args)            // Autoconnect
@@ -634,6 +656,28 @@ String loadParams(AutoConnectAux& aux, PageArgument& args)            // Autocon
   if (param) {                                                        // Autoconnect
     if (aux.loadElement(param)) {                                     // Autoconnect
       getParams(aux);                                                 // Autoconnect
+      Serial.println(" loaded");                                      // Autoconnect
+    }                                                                 // Autoconnect
+    else                                                              // Autoconnect
+      Serial.println(" failed to load");                              // Autoconnect
+    param.close();                                                    // Autoconnect
+  }                                                                   // Autoconnect
+  else                                                                // Autoconnect
+    Serial.println(" open failed");                                   // Autoconnect
+  return String("");                                                  // Autoconnect
+}
+
+
+// Load parameters saved with saveParams from SPIFFS into the
+// elements defined in /sensor_setting JSON.
+String loadSensorParams(AutoConnectAux& aux, PageArgument& args)    // Autoconnect
+{                                                                     // Autoconnect
+  (void)(args);                                                       // Autoconnect
+  Serial.print(PARAM_SENSOR_FILE);                                    // Autoconnect
+  File param = FlashFS.open(PARAM_SENSOR_FILE, "r");                  // Autoconnect
+  if (param) {                                                        // Autoconnect
+    if (aux.loadElement(param)) {                                     // Autoconnect
+      getSensorParams(aux);                                           // Autoconnect
       Serial.println(" loaded");                                      // Autoconnect
     }                                                                 // Autoconnect
     else                                                              // Autoconnect
@@ -670,6 +714,31 @@ String saveParams(AutoConnectAux& aux, PageArgument& args) {          // Autocon
   aux[F("userkey")].value = userKey;                                                           // Autoconnect
   aux[F("apikey")].value = apiKey;                                                             // Autoconnect
   aux[F("period")].value = String(publishInterval / 1000);                                     // Autoconnect
+
+  return String();                                                                             // Autoconnect
+}                                                                                              // Autoconnect
+
+// Save the value of each element entered by '/sensor_setting' to the
+// parameter file. The saveParamsSensor as below is a callback function of
+// /sensor_save. When invoking this handler, the input value of each
+// element is already stored in '/sensor_setting'.
+// In the Sketch, you can output to stream its elements specified by name.
+String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Autoconnect
+  // The 'where()' function returns the AutoConnectAux that caused
+  // the transition to this page.
+  AutoConnectAux&   sensor_setting = *portal.aux(portal.where());          // Autoconnect
+  getSensorParams(sensor_setting);                                         // Autoconnect
+
+  // The entered value is owned by AutoConnectAux of /mqtt_setting.
+  // To retrieve the elements of /sensor_setting, it is necessary to get
+  // the AutoConnectAux object of /sensor_setting.
+  File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename"});     // Autoconnect
+  param.close();                                                      // Autoconnect
+
+  // Echo back saved parameters to AutoConnectAux page.
+  aux[F("beenodename")].value = beenodename;                                                   // Autoconnect
+  aux[F("hivename")].value = hivename;                                                         // Autoconnect
 
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect

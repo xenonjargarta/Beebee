@@ -29,7 +29,7 @@
         "placeholder": "Bee Node XXX"
       },
       {
-        "name": "Hive Name",
+        "name": "hivename",
         "type": "ACInput",
         "label": "Hive Name"
       },
@@ -130,6 +130,31 @@
         "type": "ACSubmit",
         "value": "Discard",
         "uri": "/"
+      }
+    ]
+  },
+  {
+    "title": "SENSOR Setting",
+    "uri": "/sensor_save",
+    "menu": false,
+    "element": [
+      {
+        "name": "caption",
+        "type": "ACText",
+        "value": "<h4>Parameters saved as:</h4>",
+        "style": "text-align:center;color:#2f4f4f;padding:10px;"
+      },
+      {
+        "name": "beenodename",
+        "type": "ACText",
+        "format": "Server: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "hivename",
+        "type": "ACText",
+        "format": "Channel ID: %s",
+        "posterior": "br"
       }
     ]
   }
