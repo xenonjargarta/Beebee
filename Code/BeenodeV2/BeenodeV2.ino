@@ -1,14 +1,13 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1007550/1966080  Bytes (50%) 
-                          Used memory for globale variabel 41948 Bytes (12%)
+                          Used programm memory 1205606/1966080  Bytes (61%) 
+                          Used memory for globale variabel 46692 Bytes (12%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 285732 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 280988 Bytes (Max 327680 Bytes)
       
       Feature:            (x) Webpage 
                           (x) Wifi Lifecycle
-                          (in progress) Configuration Creation (BeeSensors)
-                          (x) Configuration management (BeeSensors)
+                          (in progress) Configuration management (BeeSensors)
                           (x) Configuration management (MQTT)
                           ( ) MQTT
                           (in progress) Vibration Sensor (ADXL345)
@@ -46,7 +45,9 @@
 #define AUTOCONNECT_MENUCOLOR_TEXT        "#fffacd" // Autoconnect
 #define AUTOCONNECT_MENUCOLOR_BACKGROUND  "#696969" // Autoconnect
 #define AUTOCONNECT_MENUCOLOR_ACTIVE      "#808080" // Autoconnect
-//#define AUTOCONNECT_URI         "/_ac"              // Autoconnect
+#define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))      // Autoconnect
+#define GET_HOSTNAME()  (WiFi.getHostname())        // Autoconnect
+//#define AUTOCONNECT_URI         "/_ac"            // Autoconnect
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
 WiFiWebServer server;               // Autoconnect
@@ -73,10 +74,27 @@ DallasTemperature sensors(&oneWire); // OneWireTemperatur
 #define TIME_TO_SLEEP  10           //DeepSleep
 
 RTC_DATA_ATTR int bootCount = 0;    //DeepSleep
-bool useDeepSleep = false;
+bool useDeepSleep = false;          //DeepSleep
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
+
+const char* PARAM_FILE              = "/param.json";        // Autoconnect
+const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";    // Autoconnect
+const char* AUX_SETTING_URI = "/mqtt_setting";              // Autoconnect
+const char* AUX_SAVE_URI    = "/mqtt_save";                 // Autoconnect
+const char* AUX_CLEAR_URI   = "/mqtt_clear";                // Autoconnect
+
+String  apId;         // Autoconnect
+String  hostName;     // Autoconnect
+
+String  serverName;   // Autoconnect
+String  channelId;    // Autoconnect
+String  userKey;      // Autoconnect
+String  apiKey;       // Autoconnect
+bool  uniqueid;       // Autoconnect
+unsigned long publishInterval = 0;   // Autoconnect
+const char* userId = "anyone";       // Autoconnect
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -230,9 +248,27 @@ void setup()
 
 void SetupAutoConnect()
 {
-  SPIFFS.begin();               // Autoconnect
+  SPIFFS.begin();                                     // Autoconnect
   File page = SPIFFS.open("/mqttpage.json", "r");     // Autoconnect
-  portal.load(page);                                  // Autoconnect
+  if(portal.load(page))                               // Autoconnect
+  {                                                   // Autoconnect
+    PageArgument  args;                               // Autoconnect
+    AutoConnectAux& mqtt_setting = *portal.aux(AUX_SETTING_URI);// Autoconnect
+    loadParams(mqtt_setting, args);                             // Autoconnect
+    if (uniqueid)                                               // Autoconnect
+    {                                                           // Autoconnect
+      config.apid = "ESP-" + String(GET_CHIPID(), HEX);         // Autoconnect
+      Serial.println("apid set to " + config.apid);             // Autoconnect
+    }                                                           // Autoconnect
+    if (hostName.length())                                      // Autoconnect
+    {                                                           // Autoconnect
+      config.hostName = hostName;                               // Autoconnect
+      Serial.println("hostname set to " + config.hostName);     // Autoconnect
+    }                                                           // Autoconnect
+    portal.on(AUX_SETTING_URI, loadParams);                     // Autoconnect
+    portal.on(AUX_SAVE_URI, saveParams);                        // Autoconnect
+  }                                                             // Autoconnect
+  
   page.close();                                       // Autoconnect
   File page1 = SPIFFS.open("/sensorpage.json", "r");  // Autoconnect
   portal.load(page1);                                 // Autoconnect
@@ -255,8 +291,13 @@ void SetupAutoConnect()
   // the link of the object tag, and the request can be caught by onNotFound handler.
   portal.onNotFound(handleFileRead);                // Autoconnect
   config.ota = AC_OTA_BUILTIN;                      // Autoconnect
-  config.title = "BeeNode 2A 200320221349";         // Autoconnect
+  config.title = "BeeNode 2A 020420221519";         // Autoconnect
   config.homeUri = "/_ac";                          // Autoconnect
+  config.bootUri = AC_ONBOOTURI_HOME;               // Autoconnect
+  // Reconnect and continue publishing even if WiFi is disconnected.
+  config.autoReconnect = true;                      // Autoconnect
+  config.reconnectInterval = 1;                     // Autoconnect
+  
   portal.config(config);                            // Autoconnect
   portal.begin();                                   // Autoconnect
 }
@@ -564,3 +605,71 @@ void print_wakeup_reason()                            //DeepSleep
     default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;            //DeepSleep
   }                                                                                                       //DeepSleep
 }                                                                                                         //DeepSleep
+
+
+void getParams(AutoConnectAux& aux) 
+{
+  serverName = aux[F("mqttserver")].value;                            // Autoconnect
+  serverName.trim();                                                  // Autoconnect
+  channelId = aux[F("channelid")].value;                              // Autoconnect
+  channelId.trim();                                                   // Autoconnect
+  userKey = aux[F("userkey")].value;                                  // Autoconnect  
+  userKey.trim();                                                     // Autoconnect
+  apiKey = aux[F("apikey")].value;                                    // Autoconnect
+  apiKey.trim();                                                      // Autoconnect
+  AutoConnectRadio& period = aux[F("period")].as<AutoConnectRadio>(); // Autoconnect
+  publishInterval = period.value().substring(0, 2).toInt() * 1000;    // Autoconnect
+  uniqueid = aux[F("uniqueid")].as<AutoConnectCheckbox>().checked;    // Autoconnect
+  hostName = aux[F("hostname")].value;                                // Autoconnect
+  hostName.trim();                                                    // Autoconnect
+}
+
+// Load parameters saved with saveParams from SPIFFS into the
+// elements defined in /mqtt_setting JSON.
+String loadParams(AutoConnectAux& aux, PageArgument& args)            // Autoconnect
+{                                                                     // Autoconnect
+  (void)(args);                                                       // Autoconnect
+  Serial.print(PARAM_FILE);                                           // Autoconnect
+  File param = FlashFS.open(PARAM_FILE, "r");                         // Autoconnect
+  if (param) {                                                        // Autoconnect
+    if (aux.loadElement(param)) {                                     // Autoconnect
+      getParams(aux);                                                 // Autoconnect
+      Serial.println(" loaded");                                      // Autoconnect
+    }                                                                 // Autoconnect
+    else                                                              // Autoconnect
+      Serial.println(" failed to load");                              // Autoconnect
+    param.close();                                                    // Autoconnect
+  }                                                                   // Autoconnect
+  else                                                                // Autoconnect
+    Serial.println(" open failed");                                   // Autoconnect
+  return String("");                                                  // Autoconnect
+}
+
+// Save the value of each element entered by '/mqtt_setting' to the
+// parameter file. The saveParams as below is a callback function of
+// /mqtt_save. When invoking this handler, the input value of each
+// element is already stored in '/mqtt_setting'.
+// In the Sketch, you can output to stream its elements specified by name.
+String saveParams(AutoConnectAux& aux, PageArgument& args) {          // Autoconnect
+  // The 'where()' function returns the AutoConnectAux that caused
+  // the transition to this page.
+  AutoConnectAux&   mqtt_setting = *portal.aux(portal.where());       // Autoconnect
+  getParams(mqtt_setting);                                            // Autoconnect
+
+  // The entered value is owned by AutoConnectAux of /mqtt_setting.
+  // To retrieve the elements of /mqtt_setting, it is necessary to get
+  // the AutoConnectAux object of /mqtt_setting.
+  File param = FlashFS.open(PARAM_FILE, "w");                         // Autoconnect
+  mqtt_setting.saveElement(param, {"mqttserver", "channelid", "userkey", "apikey", "uniqueid", "period", "hostname"}); // Autoconnect
+  param.close();                                                      // Autoconnect
+
+  // Echo back saved parameters to AutoConnectAux page.
+  AutoConnectInput& mqttserver = mqtt_setting[F("mqttserver")].as<AutoConnectInput>();         // Autoconnect
+  aux[F("mqttserver")].value = serverName + String(mqttserver.isValid() ? " (OK)" : " (ERR)"); // Autoconnect
+  aux[F("channelid")].value = channelId;                                                       // Autoconnect
+  aux[F("userkey")].value = userKey;                                                           // Autoconnect
+  aux[F("apikey")].value = apiKey;                                                             // Autoconnect
+  aux[F("period")].value = String(publishInterval / 1000);                                     // Autoconnect
+
+  return String();                                                                             // Autoconnect
+}                                                                                              // Autoconnect
