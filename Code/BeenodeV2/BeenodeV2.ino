@@ -1,31 +1,31 @@
 /*    
-    Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                        Used programm memory 999406/1966080  Bytes (50%) 
-                        Used memory for globale variabel 41884 Bytes (12%)
-                        Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                        Still free memory for local variable 285796 Bytes (Max 327680 Bytes)
-    
-    Feature:            (x) Webpage 
-                        (x) Wifi Lifecycle
-                        (in progress) Configuration Creation (BeeSensors)
-                        (x) Configuration management (BeeSensors)
-                        (x) Configuration management (MQTT)
-                        ( ) MQTT
-                        (in progress) Vibration Sensor (ADXL345)
-                        ( ) Weight Sensor (HX711)
-                        (in progress) Temperature Sensor (DS)
-                        ( ) Humadity Sensor ()
-                        (in progress) RTC (DS)
-                        ( ) Power management
-                        ( ) Deep Sleep (ESP)
-                        ( ) Lora Communication
-                        ( ) SIM Communication
-                        (in progress) SD Card
-                        
-    Scenario supported: (X) Always On with webserver
-                        ( ) Sleep on always power
-                        ( ) Sleep on battery
-                        ( ) One time startup
+      Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
+                          Used programm memory 999406/1966080  Bytes (50%) 
+                          Used memory for globale variabel 41884 Bytes (12%)
+                          Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
+                          Still free memory for local variable 285796 Bytes (Max 327680 Bytes)
+      
+      Feature:            (x) Webpage 
+                          (x) Wifi Lifecycle
+                          (in progress) Configuration Creation (BeeSensors)
+                          (x) Configuration management (BeeSensors)
+                          (x) Configuration management (MQTT)
+                          ( ) MQTT
+                          (in progress) Vibration Sensor (ADXL345)
+                          ( ) Weight Sensor (HX711)
+                          (in progress) Temperature Sensor (DS)
+                          ( ) Humadity Sensor ()
+                          (in progress) RTC (DS3231)
+                          ( ) Power management
+                          ( ) Deep Sleep (ESP)
+                          ( ) Lora Communication
+                          ( ) SIM Communication
+                          (in progress) SD Card
+                          
+      Scenario supported: (X) Always On with webserver
+                          ( ) Sleep on always power
+                          ( ) Sleep on battery
+                          ( ) One time startup
 */
 
 // ------------------------------ Includes ------------------------------------------
@@ -255,31 +255,31 @@ void SetupAutoConnect()
   portal.begin();                                   // Autoconnect
 }
 
-void SetupVibration()
-{
-   Serial.println("Accelerometer Test"); Serial.println("");                    //ADXL345
+void SetupVibration()                                                   //ADXL345
+{                                                                       //ADXL345
+   Serial.println("Accelerometer Test"); Serial.println("");            //ADXL345
   
  /* Initialise the sensor */  
-    if(!accel.begin())
-    {
+    if(!accel.begin())                                                  //ADXL345
+    {                                                                   //ADXL345
     /* There was a problem detecting the ADXL345 ... check your connections */
-    Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");
-    while(1);
-  }
+    Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");//ADXL345
+    while(1);                                                           //ADXL345
+  }                                                                     //ADXL345
 
   /* Set the range to whatever is appropriate for your project */
-  accel.setRange(ADXL345_RANGE_16_G);
-  // accel.setRange(ADXL345_RANGE_8_G);
-  // accel.setRange(ADXL345_RANGE_4_G);
-  // accel.setRange(ADXL345_RANGE_2_G);
+  accel.setRange(ADXL345_RANGE_16_G);                                   //ADXL345
+  // accel.setRange(ADXL345_RANGE_8_G);                                 //ADXL345
+  // accel.setRange(ADXL345_RANGE_4_G);                                 //ADXL345
+  // accel.setRange(ADXL345_RANGE_2_G);                                 //ADXL345
   
   /* Display some basic information on this sensor */
-  displaySensorDetails();
+  displaySensorDetails();                                               //ADXL345
   
   /* Display additional settings (outside the scope of sensor_t) */
-  displayDataRate();
-  displayRange();
-  Serial.println("");
+  displayDataRate();                                                    //ADXL345
+  displayRange();                                                       //ADXL345
+  Serial.println("");                                                   //ADXL345
 }
 
 void SetupTemperature()
@@ -342,16 +342,16 @@ void HandleTemperature()
 void HandleWeigth()
 {}
 
-void HandleVibration()
+void HandleVibration()                                                   //ADXL345
 {
  /* Get a new sensor event */ 
-  sensors_event_t event; 
-  accel.getEvent(&event);
+  sensors_event_t event;                                                 //ADXL345
+  accel.getEvent(&event);                                                //ADXL345
  
   /* Display the results (acceleration is measured in m/s^2) */
-  Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print("  ");
-  Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("  ");
-  Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");Serial.println("m/s^2 ");
+  Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print("  ");                            //ADXL345
+  Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("  ");                            //ADXL345
+  Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");Serial.println("m/s^2 ");   //ADXL345
  delay(1000);
 }
 
