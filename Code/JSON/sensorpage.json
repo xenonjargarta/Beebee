@@ -147,8 +147,83 @@
         "label": "Use real time clock",
         "checked": false
       },
-	  {
+	    {
         "name": "newline6",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "useMQQTServer",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use mqtt server",
+        "checked": false
+      },
+      {
+        "name": "mqttserver",
+        "type": "ACInput",
+        "label": "Server",
+        "pattern": "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$",
+        "placeholder": "MQTT broker server"
+      },
+      {
+        "name": "topic",
+        "type": "ACInput",
+        "label": "Topic"
+      },
+      {
+        "name": "SSID",
+        "type": "ACInput",
+        "label": "SSID"
+      },
+      {
+        "name": "wifipwd",
+        "type": "ACInput",
+        "label": "Wifi Password"
+      },
+      {
+        "name": "umqttusername",
+        "type": "ACInput",
+        "label": "MQTT Username (leave blank for anonym)"
+      },
+      {
+        "name": "mqttpassword",
+        "type": "ACInput",
+        "label": "MQTT Password (leave blank for anonym)"
+      },
+      {
+        "name": "newline11",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "sdaio",
+        "type": "ACInput",
+        "label": "SDA IO"
+      },
+      {
+        "name": "sdlio",
+        "type": "ACInput",
+        "label": "SDL IO"
+      },
+      {
+        "name": "newline12",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "useSDLogging",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use SD Log",
+        "checked": false
+      },
+      {
+        "name": "newline13",
+        "type": "ACElement",
+        "value": "<hr>"
+      },      {
+        "name": "newline14",
         "type": "ACElement",
         "value": "<hr>"
       },

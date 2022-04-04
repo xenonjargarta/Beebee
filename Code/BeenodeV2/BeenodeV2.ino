@@ -1,6 +1,6 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1208894/1966080  Bytes (61%) 
+                          Used programm memory 121094/1966080  Bytes (61%) 
                           Used memory for globale variabel 46740 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
                           Still free memory for local variable 280940 Bytes (Max 327680 Bytes)
@@ -39,12 +39,10 @@
 #include <DS3231.h>                 // DS3231-RTC
 #include <OneWire.h>                // OneWireTemperatur
 #include <DallasTemperature.h>      // OneWireTemperatur
+#include "EspMQTTClient.h"
 
 // ------------------------------ Definitions (Global) ------------------------------------------
 #define FORMAT_ON_FAIL  true        // Autoconnect
-#define AUTOCONNECT_MENUCOLOR_TEXT        "#fffacd" // Autoconnect
-#define AUTOCONNECT_MENUCOLOR_BACKGROUND  "#696969" // Autoconnect
-#define AUTOCONNECT_MENUCOLOR_ACTIVE      "#808080" // Autoconnect
 #define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))      // Autoconnect
 #define GET_HOSTNAME()  (WiFi.getHostname())        // Autoconnect
 //#define AUTOCONNECT_URI         "/_ac"            // Autoconnect
@@ -91,11 +89,11 @@ const char* AUX_CLEAR_URI           = "/mqtt_clear";         // Autoconnect
 String  apId;         // Autoconnect
 String  hostName;     // Autoconnect
 
-String  serverName;   // Autoconnect
-String  channelId;    // Autoconnect
-String  userKey;      // Autoconnect
-String  apiKey;       // Autoconnect
-bool  uniqueid;       // Autoconnect
+String  serverName;   // Autoconnect; mqtt
+String  channelId;    // Autoconnect; mqtt
+String  userKey;      // Autoconnect; mqtt
+String  apiKey;       // Autoconnect; mqtt
+bool  uniqueid;       // Autoconnect; mqtt
 unsigned long publishInterval = 0;   // Autoconnect
 const char* userId = "anyone";       // Autoconnect
 
@@ -110,6 +108,13 @@ bool needToReboot = false;
 float acc_datarate = 3200.0f;
 bool acc_usefullres = false;
 int acc_range = 16;
+
+const char* mqttUser = "";          // MQTT
+const char* mqttPassword = "";      // MQTT
+bool allowedtosendQTT = false;
+
+EspMQTTClient client;          // using the default constructor
+
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -466,7 +471,26 @@ void SetupWeigth()
 {}
 
 void SetupCommunication()
-{}
+{
+  client.enableDebuggingMessages();
+  client.setWifiCredentials("Zinn-Router", "Belana2008()A");
+
+  const char *beenodechar = beenodename.c_str();
+  client.setMqttClientName("beenodechar");
+  const char *serverChar = serverName.c_str();
+  client.setMqttServer(serverChar, "", "", 1883);
+}
+
+void onConnectionEstablished()
+{
+  // Subscribe to "mytopic/test" and display received message to Serial
+  client.subscribe("test/topic", [](const String & payload) {
+    Serial.println(payload);
+  });
+
+  // Publish a message to "mytopic/test"
+  client.publish("test/topic", "This is a message"); // You can activate the retain flag by setting the third parameter to true
+}
 
 void SetupDeepSleep()                                                               //DeepSleep
 {
@@ -561,11 +585,14 @@ void HandleVibration()                                                   //ADXL3
   Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print("  ");                            //ADXL345
   Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("  ");                            //ADXL345
   Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");Serial.println("m/s^2 ");   //ADXL345
- delay(1000);
+  delay(1000);
 }
 
 void HandleCommunication()
-{}
+{     
+   client.loop();
+}
+
 
 void HandleDeepSleep()
 {
