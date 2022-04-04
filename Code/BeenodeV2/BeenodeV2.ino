@@ -1,9 +1,9 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1261318/1966080  Bytes (64%) 
-                          Used memory for globale variabel 50700 Bytes (15%)
+                          Used programm memory 1261426/1966080  Bytes (64%) 
+                          Used memory for globale variabel 50708 Bytes (15%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 276980 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 276972 Bytes (Max 327680 Bytes)
       
       Feature:            (x) Webpage 
                           (x) Wifi Lifecycle
@@ -39,23 +39,22 @@
 #include <DS3231.h>                 // DS3231-RTC
 #include <OneWire.h>                // OneWireTemperatur
 #include <DallasTemperature.h>      // OneWireTemperatur
-#include "EspMQTTClient.h"
+#include "EspMQTTClient.h"          // MQTT
 
 struct CfgStorage {
   String sdaio;                   // ADXL345, RTC
   String sdlio;                   // ADXL345, RTC
   String beenodename;             // Autoconnect
   String hivename;                // Autoconnect
-
   int deepSleepTime;              // Autoconnect
-  bool useTemperatureSensor;      //
-  bool useVibrationSensor;        //
-  bool useRTCSensor;              //
-  bool setupReadyVibration;       //
-  bool needToReboot;              //
-  float acc_datarate;             //
-  bool acc_usefullres;            //
-  int acc_range;                  //
+  bool useTemperatureSensor;      // OneWireTemperatur
+  bool useVibrationSensor;        // ADXL345
+  bool useRTCSensor;              // RTC
+  bool setupReadyVibration;       // ADXL345 
+  bool needToReboot;              // Autoconnect
+  float acc_datarate;             // ADXL345
+  bool acc_usefullres;            // ADXL345
+  int acc_range;                  // ADXL345
   bool useMQTT;                   // MQTT
   String mqtt_SSID;               // MQTT
   String mqtt_wifi_pwd;           // MQTT
@@ -65,7 +64,6 @@ struct CfgStorage {
   String mqtt_server;             // MQTT
   bool useDeepSleep;              // DeepSleep
   bool useSDLogging;              // SDLogging
-
 };
 
 CfgStorage _CfgStorage = {"","","", "", 20, false, false, false, false, false, 3200, false, 16, false,"","","","","","", false, false};
@@ -109,30 +107,10 @@ const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
 const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect
-const char* AUX_SETTING_URI         = "/mqtt_setting";       // Autoconnect
-const char* AUX_SAVE_URI            = "/mqtt_save";          // Autoconnect
-const char* AUX_CLEAR_URI           = "/mqtt_clear";         // Autoconnect
 
-String  apId;         // Autoconnect
-String  hostName;     // Autoconnect
-
-String  serverName;   // Autoconnect; mqtt
-String  channelId;    // Autoconnect; mqtt
-String  userKey;      // Autoconnect; mqtt
-String  apiKey;       // Autoconnect; mqtt
-bool  uniqueid;       // Autoconnect; mqtt
-unsigned long publishInterval = 0;   // Autoconnect
-const char* userId = "anyone";       // Autoconnect
-
-
-const char* mqttUser = "";          // MQTT
-const char* mqttPassword = "";      // MQTT
 bool allowedtosendQTT = false;      
 
-
-
 EspMQTTClient client;          // using the default constructor
-
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -296,27 +274,6 @@ void setup()
 void SetupAutoConnect()
 {
   SPIFFS.begin();                                     // Autoconnect
-  File page = SPIFFS.open("/mqttpage.json", "r");     // Autoconnect
-  if(portal.load(page))                               // Autoconnect
-  {                                                   // Autoconnect
-    PageArgument  args;                               // Autoconnect
-    AutoConnectAux& mqtt_setting = *portal.aux(AUX_SETTING_URI);// Autoconnect
-    loadParams(mqtt_setting, args);                             // Autoconnect
-    if (uniqueid)                                               // Autoconnect
-    {                                                           // Autoconnect
-      config.apid = "ESP-" + String(GET_CHIPID(), HEX);         // Autoconnect
-      Serial.println("apid set to " + config.apid);             // Autoconnect
-    }                                                           // Autoconnect
-    if (hostName.length())                                      // Autoconnect
-    {                                                           // Autoconnect
-      config.hostName = hostName;                               // Autoconnect
-      Serial.println("hostname set to " + config.hostName);     // Autoconnect
-    }                                                           // Autoconnect
-    portal.on(AUX_SETTING_URI, loadParams);                     // Autoconnect
-    portal.on(AUX_SAVE_URI, saveParams);                        // Autoconnect
-  }                                                             // Autoconnect
-  
-  page.close();                                       // Autoconnect
   File page1 = SPIFFS.open("/sensorpage.json", "r");  // Autoconnect
   if(portal.load(page1))                              // Autoconnect
   {                                                   // Autoconnect
@@ -498,7 +455,7 @@ void SetupCommunication()
 
   const char *beenodechar = _CfgStorage.beenodename.c_str();
   client.setMqttClientName("beenodechar");
-  const char *serverChar = serverName.c_str();
+  const char *serverChar = _CfgStorage.mqtt_server.c_str();
   client.setMqttServer(serverChar, "", "", 1883);
 }
 
@@ -789,24 +746,7 @@ void print_wakeup_reason()                            //DeepSleep
   }                                                                                                       //DeepSleep
 }                                                                                                         //DeepSleep
 
-
-void getParams(AutoConnectAux& aux) 
-{
-  serverName = aux[F("mqttserver")].value;                            // Autoconnect
-  serverName.trim();                                                  // Autoconnect
-  channelId = aux[F("channelid")].value;                              // Autoconnect
-  channelId.trim();                                                   // Autoconnect
-  userKey = aux[F("userkey")].value;                                  // Autoconnect  
-  userKey.trim();                                                     // Autoconnect
-  apiKey = aux[F("apikey")].value;                                    // Autoconnect
-  apiKey.trim();                                                      // Autoconnect
-  AutoConnectRadio& period = aux[F("period")].as<AutoConnectRadio>(); // Autoconnect
-  publishInterval = period.value().substring(0, 2).toInt() * 1000;    // Autoconnect
-  uniqueid = aux[F("uniqueid")].as<AutoConnectCheckbox>().checked;    // Autoconnect
-  hostName = aux[F("hostname")].value;                                // Autoconnect
-  hostName.trim();                                                    // Autoconnect
-}
-
+// publishInterval = period.value().substring(0, 2).toInt() * 1000;
 
 void getSensorParams(AutoConnectAux& aux) 
 {
@@ -903,28 +843,6 @@ void getSensorParams(AutoConnectAux& aux)
 }
 
 // Load parameters saved with saveParams from SPIFFS into the
-// elements defined in /mqtt_setting JSON.
-String loadParams(AutoConnectAux& aux, PageArgument& args)            // Autoconnect
-{                                                                     // Autoconnect
-  (void)(args);                                                       // Autoconnect
-  Serial.print(PARAM_FILE);                                           // Autoconnect
-  File param = FlashFS.open(PARAM_FILE, "r");                         // Autoconnect
-  if (param) {                                                        // Autoconnect
-    if (aux.loadElement(param)) {                                     // Autoconnect
-      getParams(aux);                                                 // Autoconnect
-      Serial.println(" loaded");                                      // Autoconnect
-    }                                                                 // Autoconnect
-    else                                                              // Autoconnect
-      Serial.println(" failed to load");                              // Autoconnect
-    param.close();                                                    // Autoconnect
-  }                                                                   // Autoconnect
-  else                                                                // Autoconnect
-    Serial.println(" open failed");                                   // Autoconnect
-  return String("");                                                  // Autoconnect
-}
-
-
-// Load parameters saved with saveParams from SPIFFS into the
 // elements defined in /sensor_setting JSON.
 String loadSensorParams(AutoConnectAux& aux, PageArgument& args)    // Autoconnect
 {                                                                     // Autoconnect
@@ -944,34 +862,8 @@ String loadSensorParams(AutoConnectAux& aux, PageArgument& args)    // Autoconne
     Serial.println(" open failed");                                   // Autoconnect
   return String("");                                                  // Autoconnect
 }
-
-// Save the value of each element entered by '/mqtt_setting' to the
-// parameter file. The saveParams as below is a callback function of
-// /mqtt_save. When invoking this handler, the input value of each
-// element is already stored in '/mqtt_setting'.
-// In the Sketch, you can output to stream its elements specified by name.
-String saveParams(AutoConnectAux& aux, PageArgument& args) {          // Autoconnect
-  // The 'where()' function returns the AutoConnectAux that caused
-  // the transition to this page.
-  AutoConnectAux&   mqtt_setting = *portal.aux(portal.where());       // Autoconnect
-  getParams(mqtt_setting);                                            // Autoconnect
-
-  // The entered value is owned by AutoConnectAux of /mqtt_setting.
-  // To retrieve the elements of /mqtt_setting, it is necessary to get
-  // the AutoConnectAux object of /mqtt_setting.
-  File param = FlashFS.open(PARAM_FILE, "w");                         // Autoconnect
-  mqtt_setting.saveElement(param, {"mqttserver", "channelid", "userkey", "apikey", "uniqueid", "period", "hostname"}); // Autoconnect
-  param.close();                                                      // Autoconnect
-
-  // Echo back saved parameters to AutoConnectAux page.
-  AutoConnectInput& mqttserver = mqtt_setting[F("mqttserver")].as<AutoConnectInput>();         // Autoconnect
-  aux[F("mqttserver")].value = serverName + String(mqttserver.isValid() ? " (OK)" : " (ERR)"); // Autoconnect
-  aux[F("channelid")].value = channelId;                                                       // Autoconnect
-  aux[F("userkey")].value = userKey;                                                           // Autoconnect
-  aux[F("apikey")].value = apiKey;                                                             // Autoconnect
-  aux[F("period")].value = String(publishInterval / 1000);                                     // Autoconnect
-  return String();                                                                             // Autoconnect
-}                                                                                              // Autoconnect
+                                                                            // Autoconnect
+//  aux[F("mqttserver")].value = serverName + String(mqttserver.isValid() ? " (OK)" : " (ERR)"); // Autoconnect
 
 // Save the value of each element entered by '/sensor_setting' to the
 // parameter file. The saveParamsSensor as below is a callback function of
