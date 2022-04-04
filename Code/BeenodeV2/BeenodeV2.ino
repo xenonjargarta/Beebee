@@ -1,9 +1,9 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1261426/1966080  Bytes (64%) 
-                          Used memory for globale variabel 50708 Bytes (15%)
+                          Used programm memory 1073366/1966080  Bytes (54%) 
+                          Used memory for globale variabel 45980 Bytes (15%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 276972 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 281700 Bytes (Max 327680 Bytes)
       
       Feature:            (x) Webpage 
                           (x) Wifi Lifecycle
@@ -62,21 +62,21 @@ struct CfgStorage {
   String mqttpassword;            // MQTT
   String mqtt_topic;              // MQTT
   String mqtt_server;             // MQTT
+  String mqtt_port;               // MQTT
   bool useDeepSleep;              // DeepSleep
   bool useSDLogging;              // SDLogging
 };
 
-CfgStorage _CfgStorage = {"","","", "", 20, false, false, false, false, false, 3200, false, 16, false,"","","","","","", false, false};
+CfgStorage _CfgStorage = {"","","", "", 20, false, false, false, false, false, 3200, false, 16, false,"","","","","","", "", false, false};
 // ------------------------------ Definitions (Global) ------------------------------------------
 #define FORMAT_ON_FAIL  true        // Autoconnect
-#define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))      // Autoconnect
-#define GET_HOSTNAME()  (WiFi.getHostname())        // Autoconnect
-//#define AUTOCONNECT_URI         "/_ac"            // Autoconnect
+#define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))   // Autoconnect
+#define GET_HOSTNAME()  (WiFi.getHostname())                  // Autoconnect
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
 WiFiWebServer server;               // Autoconnect
 AutoConnect portal(server);         // Autoconnect
-AutoConnectConfig config("NewBeeNode", "1234567890"); // Autoconnect
+AutoConnectConfig config("NewBeeNode", "1234567890");         // Autoconnect
 // Declare AutoConnectAux separately as a custom web page to access
 // easily for each page in the post-upload handler.
 AutoConnectAux auxUpload;           // Autoconnect
@@ -102,7 +102,6 @@ RTC_DATA_ATTR int bootCount = 0;    //DeepSleep
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
 
-const char* PARAM_FILE              = "/param.json";         // Autoconnect
 const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
@@ -450,13 +449,18 @@ void SetupWeigth()
 
 void SetupCommunication()
 {
-  client.enableDebuggingMessages();
-  client.setWifiCredentials("Zinn-Router", "Belana2008()A");
-
-  const char *beenodechar = _CfgStorage.beenodename.c_str();
-  client.setMqttClientName("beenodechar");
-  const char *serverChar = _CfgStorage.mqtt_server.c_str();
-  client.setMqttServer(serverChar, "", "", 1883);
+  client.enableDebuggingMessages();                                     // MQTT
+  const char *ssidchar = _CfgStorage.mqtt_SSID.c_str();                 // MQTT
+  const char *wifipwdChar = _CfgStorage.mqtt_wifi_pwd.c_str();          // MQTT
+  client.setWifiCredentials(ssidchar, wifipwdChar);                     // MQTT
+  
+  const char *beenodechar = _CfgStorage.beenodename.c_str();            // MQTT
+  client.setMqttClientName(beenodechar);                                // MQTT
+    
+  const char *serverChar = _CfgStorage.mqtt_server.c_str();             // MQTT
+  const char *usernameChar = _CfgStorage.mqttusername.c_str();          // MQTT
+  const char *passwordChar = _CfgStorage.mqttpassword.c_str();          // MQTT
+  client.setMqttServer(serverChar, usernameChar, passwordChar, _CfgStorage.mqtt_port.toInt());   // MQTT
 }
 
 void onConnectionEstablished()
@@ -779,6 +783,9 @@ void getSensorParams(AutoConnectAux& aux)
   _CfgStorage.mqttpassword.trim();                                              // MQTT
   _CfgStorage.mqtt_topic = aux[F("mqtt_topic")].value;                          // MQTT
   _CfgStorage.mqtt_topic.trim();   
+  _CfgStorage.mqtt_port = aux[F("mqtt_port")].value;                          // MQTT
+  _CfgStorage.mqtt_port.trim();   
+  
  
   _CfgStorage.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
   _CfgStorage.sdaio.trim();                                                     // ADXL, RTC
@@ -837,6 +844,9 @@ void getSensorParams(AutoConnectAux& aux)
 
   Serial.print("mqtt_server: ");                                     // MQTT 
   Serial.println(_CfgStorage.mqtt_server);                                       // MQTT
+
+  Serial.print("mqtt_server: ");                                     // MQTT 
+  Serial.println(_CfgStorage.mqtt_port);                                       // MQTT
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -880,7 +890,7 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server"});     // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server", "mqtt_port"});     // Autoconnect
   param.close();                                                      // Autoconnect
   _CfgStorage.needToReboot = true;                                                // Autoconnect
   Serial.println("Need to reboot device");                            // Autoconnect
@@ -907,6 +917,8 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("mqttusername")].value = _CfgStorage.mqttusername;                     // MQTT  
   aux[F("mqttpassword")].value = _CfgStorage.mqttpassword;                     // MQTT  
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT  
+  aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT 
+
   
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect

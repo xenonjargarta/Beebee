@@ -167,6 +167,12 @@
         "placeholder": "MQTT broker server (IP)"
       },
       {
+        "name": "mqtt_port",
+        "type": "ACInput",
+        "label": "Port",
+        "placeholder": "MQTT broker server (IP)"
+      },
+      {
         "name": "mqtt_topic",
         "type": "ACInput",
         "label": "Topic"
@@ -340,6 +346,12 @@
         "name": "mqtt_server",
         "type": "ACText",
         "format": "MQTT Server IP: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqtt_port",
+        "type": "ACText",
+        "format": "MQTT Server Port: %s",
         "posterior": "br"
       },
       {
