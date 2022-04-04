@@ -1,15 +1,15 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1261306/1966080  Bytes (64%) 
-                          Used memory for globale variabel 50708 Bytes (15%)
+                          Used programm memory 1261318/1966080  Bytes (64%) 
+                          Used memory for globale variabel 50700 Bytes (15%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 276972 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 276980 Bytes (Max 327680 Bytes)
       
       Feature:            (x) Webpage 
                           (x) Wifi Lifecycle
                           (in progress) Configuration management (BeeSensors)
-                          (x) Configuration management (MQTT)
-                          ( ) MQTT
+                          (x) Configuration management 
+                          (in progress) MQTT
                           (in progress) Vibration Sensor (ADXL345)
                           ( ) Weight Sensor (HX711)
                           (in progress) Temperature Sensor (DS)
@@ -41,6 +41,34 @@
 #include <DallasTemperature.h>      // OneWireTemperatur
 #include "EspMQTTClient.h"
 
+struct CfgStorage {
+  String sdaio;                   // ADXL345, RTC
+  String sdlio;                   // ADXL345, RTC
+  String beenodename;             // Autoconnect
+  String hivename;                // Autoconnect
+
+  int deepSleepTime;              // Autoconnect
+  bool useTemperatureSensor;      //
+  bool useVibrationSensor;        //
+  bool useRTCSensor;              //
+  bool setupReadyVibration;       //
+  bool needToReboot;              //
+  float acc_datarate;             //
+  bool acc_usefullres;            //
+  int acc_range;                  //
+  bool useMQTT;                   // MQTT
+  String mqtt_SSID;               // MQTT
+  String mqtt_wifi_pwd;           // MQTT
+  String mqttusername;            // MQTT
+  String mqttpassword;            // MQTT
+  String mqtt_topic;              // MQTT
+  String mqtt_server;             // MQTT
+  bool useDeepSleep;              // DeepSleep
+  bool useSDLogging;              // SDLogging
+
+};
+
+CfgStorage _CfgStorage = {"","","", "", 20, false, false, false, false, false, 3200, false, 16, false,"","","","","","", false, false};
 // ------------------------------ Definitions (Global) ------------------------------------------
 #define FORMAT_ON_FAIL  true        // Autoconnect
 #define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))      // Autoconnect
@@ -72,7 +100,6 @@ DallasTemperature sensors(&oneWire); // OneWireTemperatur
 #define TIME_TO_SLEEP  10           //DeepSleep
 
 RTC_DATA_ATTR int bootCount = 0;    //DeepSleep
-bool useDeepSleep = false;          //DeepSleep
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
@@ -97,35 +124,12 @@ bool  uniqueid;       // Autoconnect; mqtt
 unsigned long publishInterval = 0;   // Autoconnect
 const char* userId = "anyone";       // Autoconnect
 
-String beenodename = "dummy";    // Autoconnect
-String hivename = "dummy";       // Autoconnect
-
-int deepSleepTime = 20;   // Autoconnect
-bool useTemperatureSensor = false;
-bool useVibrationSensor = false;
-bool useRTCSensor = false;
-bool setupReadyVibration = false;
-bool needToReboot = false;
-float acc_datarate = 3200.0f;
-bool acc_usefullres = false;
-int acc_range = 16;
-
-String    sdaio;        //ADXL345, RTC
-String    sdlio;        //ADXL345, RTC
-
-bool useMQTT = false;     // MQTT
-String mqtt_SSID;         // MQTT
-String mqtt_wifi_pwd;     // MQTT
-String mqttusername;      // MQTT
-String mqttpassword;      // MQTT
-String mqtt_topic;        // MQTT
-String mqtt_server;       //MQTT
 
 const char* mqttUser = "";          // MQTT
 const char* mqttPassword = "";      // MQTT
 bool allowedtosendQTT = false;      
 
-bool useSDLogging = false;          // SDLogging
+
 
 EspMQTTClient client;          // using the default constructor
 
@@ -270,21 +274,21 @@ void setup()
   Serial.begin(115200);         // ESP Console
   Serial.println();             // ESP Console
   SetupAutoConnect();           // Autoconnect
-  if(useRTCSensor == true || useVibrationSensor == true) // DS3231-RTC, ADXL234
+  if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true) // DS3231-RTC, ADXL234
    { 
-    int sda = sdaio.substring(0,2).toInt();
-    int sdl = sdlio.substring(0,2).toInt();
+    int sda = _CfgStorage.sdaio.substring(0,2).toInt();
+    int sdl = _CfgStorage.sdlio.substring(0,2).toInt();
       Wire.begin(sda,sdl);
-      Serial.println("SDA/ SDL done " + sdaio + "/" + sdlio);
+      Serial.println("SDA/ SDL done " + _CfgStorage.sdaio + "/" + _CfgStorage.sdlio);
    }            // DS3231-RTC, ADXL234
   
-  if(useVibrationSensor) { SetupVibration(); }             // Vibration
+  if(_CfgStorage.useVibrationSensor) { SetupVibration(); }             // Vibration
   SetupCommunication();         // Communication
   SetupPowerManagement();       // Power
   SetupHumadity();              // Humadity
-  if(useRTCSensor) {  SetupRTC();     }              // RTC
-  if(useDeepSleep) { SetupDeepSleep(); }            // DeepSleep
-  if(useTemperatureSensor) { SetupTemperature(); }    // Temperatur
+  if(_CfgStorage.useRTCSensor) {  SetupRTC();     }              // RTC
+  if(_CfgStorage.useDeepSleep) { SetupDeepSleep(); }            // DeepSleep
+  if(_CfgStorage.useTemperatureSensor) { SetupTemperature(); }    // Temperatur
 }
 
 ////////// Setup function
@@ -341,7 +345,7 @@ void SetupAutoConnect()
   // the link of the object tag, and the request can be caught by onNotFound handler.
   portal.onNotFound(handleFileRead);                // Autoconnect
   config.ota = AC_OTA_BUILTIN;                      // Autoconnect
-  config.title = beenodename + " 020420221625";     // Autoconnect
+  config.title = _CfgStorage.beenodename + " 020420221625";     // Autoconnect
   config.homeUri = "/_ac";                          // Autoconnect
   config.bootUri = AC_ONBOOTURI_HOME;               // Autoconnect
   // Reconnect and continue publishing even if WiFi is disconnected.
@@ -361,12 +365,12 @@ void SetupVibration()                                                   //ADXL34
     {                                                                   //ADXL345
         /* There was a problem detecting the ADXL345 ... check your connections */
         Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");//ADXL345
-        useVibrationSensor = false;                                         //ADXL345
+        _CfgStorage.useVibrationSensor = false;                                         //ADXL345
     }
     else                                                                  //ADXL345
     {                                                                    //ADXL345
         /* Set the range to whatever is appropriate for your project */
-        switch(acc_range)
+        switch(_CfgStorage.acc_range)
         {
           case 16:
              accel.setRange(ADXL345_RANGE_16_G); 
@@ -392,7 +396,7 @@ void SetupVibration()                                                   //ADXL34
 
       //  accel.setFullRes(acc_usefullres);
       //  Serial.print("Full resolution");Serial.println(acc_usefullres);
-          int sel = acc_datarate*100;
+          int sel = _CfgStorage.acc_datarate*100;
           switch(sel)                   //ADXL345
           {                                             //ADXL345
             case 320000:              //ADXL345
@@ -475,7 +479,7 @@ void SetupVibration()                                                   //ADXL34
         displayDataRate();                                               //ADXL345
         displayRange();                                                  //ADXL345
         Serial.println("");                                              //ADXL345
-        setupReadyVibration = true;
+        _CfgStorage.setupReadyVibration = true;
     }
 }
 
@@ -492,7 +496,7 @@ void SetupCommunication()
   client.enableDebuggingMessages();
   client.setWifiCredentials("Zinn-Router", "Belana2008()A");
 
-  const char *beenodechar = beenodename.c_str();
+  const char *beenodechar = _CfgStorage.beenodename.c_str();
   client.setMqttClientName("beenodechar");
   const char *serverChar = serverName.c_str();
   client.setMqttServer(serverChar, "", "", 1883);
@@ -522,8 +526,8 @@ void SetupDeepSleep()                                                           
   First we configure the wake up source
   We set our ESP32 to wake up every 5 seconds
   */
-  esp_sleep_enable_timer_wakeup(deepSleepTime * uS_TO_S_FACTOR);                    //DeepSleep
-  Serial.println("Setup ESP32 to sleep for every " + String(deepSleepTime) +      
+  esp_sleep_enable_timer_wakeup(_CfgStorage.deepSleepTime * uS_TO_S_FACTOR);                    //DeepSleep
+  Serial.println("Setup ESP32 to sleep for every " + String(_CfgStorage.deepSleepTime) +      
   " Seconds");                                                                      //DeepSleep
 
   /*
@@ -553,16 +557,16 @@ void SetupRTC()
 void loop() 
 {
   HandleWebPage();              // Autoconnect
-  if(!needToReboot)
+  if(!_CfgStorage.needToReboot)
   {
-    if(useTemperatureSensor) { HandleTemperature(); }     //Temperatur
+    if(_CfgStorage.useTemperatureSensor) { HandleTemperature(); }     //Temperatur
     HandleWeigth(); 
-    if(useVibrationSensor && setupReadyVibration) { HandleVibration(); }  //ADXL345
+    if(_CfgStorage.useVibrationSensor && _CfgStorage.setupReadyVibration) { HandleVibration(); }  //ADXL345
     HandleCommunication(); 
     HandlePowerManagement(); 
     HandleHumadity(); 
-    if(useRTCSensor) { HandleRTC();             }    //DS3231-RTC
-    if(useDeepSleep) { HandleDeepSleep();       }   //DeepSleep
+    if(_CfgStorage.useRTCSensor) { HandleRTC();             }    //DS3231-RTC
+    if(_CfgStorage.useDeepSleep) { HandleDeepSleep();       }   //DeepSleep
   }
   else
   {
@@ -806,93 +810,93 @@ void getParams(AutoConnectAux& aux)
 
 void getSensorParams(AutoConnectAux& aux) 
 {
-  beenodename = aux[F("beenodename")].value;                           // Autoconnect
-  beenodename.trim();                                                  // Autoconnect
-  hivename = aux[F("hivename")].value;                                 // Autoconnect
-  hivename.trim();                                                     // Autoconnect
-  useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // Autoconnect 
-  deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // Autoconnect
-  useTemperatureSensor  = aux[F("useTemperatureSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
-  useVibrationSensor  = aux[F("useVibrationSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
-  useRTCSensor  = aux[F("useRTCSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  _CfgStorage.beenodename = aux[F("beenodename")].value;                           // Autoconnect
+  _CfgStorage.beenodename.trim();                                                  // Autoconnect
+  _CfgStorage.hivename = aux[F("hivename")].value;                                 // Autoconnect
+  _CfgStorage.hivename.trim();                                                     // Autoconnect
+  _CfgStorage.useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  _CfgStorage.deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // Autoconnect
+  _CfgStorage.useTemperatureSensor  = aux[F("useTemperatureSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  _CfgStorage.useVibrationSensor  = aux[F("useVibrationSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
+  _CfgStorage.useRTCSensor  = aux[F("useRTCSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
   AutoConnectRadio& dr = aux[F("acc_datarate")].as<AutoConnectRadio>(); // Autoconnect
-  acc_datarate = dr.value().toDouble();    // Autoconnect
-  acc_usefullres  = aux[F("acc_usefullres")].as<AutoConnectCheckbox>().checked; // Autoconnect
+  _CfgStorage.acc_datarate = dr.value().toDouble();    // Autoconnect
+  _CfgStorage.acc_usefullres  = aux[F("acc_usefullres")].as<AutoConnectCheckbox>().checked; // Autoconnect
   AutoConnectRadio& range = aux[F("acc_range")].as<AutoConnectRadio>(); // Autoconnect
-  acc_range = range.value().toInt();    // Autoconnect
-  useSDLogging = aux[F("useSDLogging")].as<AutoConnectCheckbox>().checked; // SDLogging
-  mqtt_server = aux[F("mqtt_server")].value;                            // Autoconnect
-  mqtt_server.trim();                  
+  _CfgStorage.acc_range = range.value().toInt();    // Autoconnect
+  _CfgStorage.useSDLogging = aux[F("useSDLogging")].as<AutoConnectCheckbox>().checked; // SDLogging
+  _CfgStorage.mqtt_server = aux[F("mqtt_server")].value;                            // Autoconnect
+  _CfgStorage.mqtt_server.trim();                  
 
-  useMQTT = aux[F("useMQTT")].as<AutoConnectCheckbox>().checked;    // SDLogging
-  mqtt_SSID = aux[F("mqtt_SSID")].value;                            // Autoconnect
-  mqtt_SSID.trim();                                                 // MQTT
-  mqtt_wifi_pwd = aux[F("mqtt_wifi_pwd")].value;                    // MQTT
-  mqtt_wifi_pwd.trim();                                             // MQTT
-  mqttusername = aux[F("mqttusername")].value;                      // MQTT
-  mqttusername.trim();                                              // MQTT
-  mqttpassword = aux[F("mqttpassword")].value;                      // MQTT
-  mqttpassword.trim();                                              // MQTT
-  mqtt_topic = aux[F("mqtt_topic")].value;                          // MQTT
-  mqtt_topic.trim();   
+  _CfgStorage.useMQTT = aux[F("useMQTT")].as<AutoConnectCheckbox>().checked;    // SDLogging
+  _CfgStorage.mqtt_SSID = aux[F("mqtt_SSID")].value;                            // Autoconnect
+  _CfgStorage.mqtt_SSID.trim();                                                 // MQTT
+  _CfgStorage.mqtt_wifi_pwd = aux[F("mqtt_wifi_pwd")].value;                    // MQTT
+  _CfgStorage.mqtt_wifi_pwd.trim();                                             // MQTT
+  _CfgStorage.mqttusername = aux[F("mqttusername")].value;                      // MQTT
+  _CfgStorage.mqttusername.trim();                                              // MQTT
+  _CfgStorage.mqttpassword = aux[F("mqttpassword")].value;                      // MQTT
+  _CfgStorage.mqttpassword.trim();                                              // MQTT
+  _CfgStorage.mqtt_topic = aux[F("mqtt_topic")].value;                          // MQTT
+  _CfgStorage.mqtt_topic.trim();   
  
-  sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
-  sdaio.trim();                                                     // ADXL, RTC
+  _CfgStorage.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
+  _CfgStorage.sdaio.trim();                                                     // ADXL, RTC
   
-  sdlio = aux[F("sdlio")].value;                                    // Autoconnect
-  sdlio.trim();                                                     // ADXL, RTC
+  _CfgStorage.sdlio = aux[F("sdlio")].value;                                    // Autoconnect
+  _CfgStorage.sdlio.trim();                                                     // ADXL, RTC
 
   Serial.println(" ");                                              // Autoconnect 
   Serial.println("Curren Configuration:");                          // Autoconnect 
   Serial.print("Bee node name: ");                                  // Autoconnect 
-  Serial.println(beenodename);                                      // Autoconnect 
+  Serial.println(_CfgStorage.beenodename);                                      // Autoconnect 
   Serial.print("Hive name: ");                                      // Autoconnect 
-  Serial.println(hivename);                                         // Autoconnect 
+  Serial.println(_CfgStorage.hivename);                                         // Autoconnect 
   Serial.print("Used deep sleep: ");                                // Autoconnect 
-  Serial.println(useDeepSleep);                                     // Autoconnect 
+  Serial.println(_CfgStorage.useDeepSleep);                                     // Autoconnect 
   Serial.print("Deep sleep time: ");                                // Autoconnect 
-  Serial.println(deepSleepTime);                                    // Autoconnect 
+  Serial.println(_CfgStorage.deepSleepTime);                                    // Autoconnect 
   Serial.print("Use temperature sensor: ");                         // Autoconnect 
-  Serial.println(useTemperatureSensor);                             // Autoconnect 
+  Serial.println(_CfgStorage.useTemperatureSensor);                             // Autoconnect 
   Serial.print("Use vibration sensor: ");                           // Autoconnect 
-  Serial.println(useVibrationSensor);                               // Autoconnect 
+  Serial.println(_CfgStorage.useVibrationSensor);                               // Autoconnect 
   Serial.print("Use RTC sensor: ");                                 // Autoconnect 
-  Serial.println(useRTCSensor);                                     // Autoconnect 
+  Serial.println(_CfgStorage.useRTCSensor);                                     // Autoconnect 
 
   Serial.print("acc_datarate: ");                                   // Autoconnect 
-  Serial.println(acc_datarate);                                     // Autoconnect 
+  Serial.println(_CfgStorage.acc_datarate);                                     // Autoconnect 
 
   Serial.print("acc_usefullres: ");                                 // Autoconnect 
-  Serial.println(acc_usefullres);                                   // Autoconnect 
+  Serial.println(_CfgStorage.acc_usefullres);                                   // Autoconnect 
 
   Serial.print("acc_range: ");                                      // Autoconnect 
-  Serial.println(acc_range);                                        // Autoconnect 
+  Serial.println(_CfgStorage.acc_range);                                        // Autoconnect 
 
-  Serial.print("sdaio: ");                                          // Autoconnect 
-  Serial.println(sdaio);                                            // Autoconnect 
+  Serial.print("sdaio: ");                                          // ADXL345, RTC  
+  Serial.println(_CfgStorage.sdaio);                                // ADXL345, RTC 
   Serial.print("sdlio: ");                                          // ADXL345, RTC 
-  Serial.println(sdlio);                                            // ADXL345, RTC 
+  Serial.println(_CfgStorage.sdlio);                                // ADXL345, RTC 
 
   Serial.print("useMQTT: ");                                        // MQTT 
-  Serial.println(useMQTT);                                          // MQTT
+  Serial.println(_CfgStorage.useMQTT);                                          // MQTT
 
   Serial.print("mqtt_SSID: ");                                      // MQTT 
-  Serial.println(mqtt_SSID);                                        // MQTT
+  Serial.println(_CfgStorage.mqtt_SSID);                                        // MQTT
 
   Serial.print("mqtt_wifi_pwd: ");                                  // MQTT 
-  Serial.println(mqtt_wifi_pwd);                                    // MQTT
+  Serial.println(_CfgStorage.mqtt_wifi_pwd);                                    // MQTT
 
   Serial.print("mqttusername: ");                                   // MQTT 
-  Serial.println(mqttusername);                                     // MQTT
+  Serial.println(_CfgStorage.mqttusername);                                     // MQTT
 
   Serial.print("mqttpassword: ");                                   // MQTT 
-  Serial.println(mqttpassword);                                     // MQTT
+  Serial.println(_CfgStorage.mqttpassword);                                     // MQTT
     
   Serial.print("mqtt_topic: ");                                     // MQTT 
-  Serial.println(mqtt_topic);                                       // MQTT
+  Serial.println(_CfgStorage.mqtt_topic);                                       // MQTT
 
   Serial.print("mqtt_server: ");                                     // MQTT 
-  Serial.println(mqtt_server);                                       // MQTT
+  Serial.println(_CfgStorage.mqtt_server);                                       // MQTT
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -986,31 +990,31 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
   sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server"});     // Autoconnect
   param.close();                                                      // Autoconnect
-  needToReboot = true;                                                // Autoconnect
+  _CfgStorage.needToReboot = true;                                                // Autoconnect
   Serial.println("Need to reboot device");                            // Autoconnect
 
  // Echo back saved parameters to AutoConnectAux page.
-  aux[F("beenodename")].value = beenodename;                       // Autoconnect
-  aux[F("hivename")].value = hivename;                             // Autoconnect
-  aux[F("deepSleepTime")].value = deepSleepTime;                   // Autoconnect
-  aux[F("useDeepSleep")].value = useDeepSleep;                     // Autoconnect
-  aux[F("useTemperatureSensor")].value = useTemperatureSensor;     // Autoconnect
-  aux[F("useVibrationSensor")].value = useVibrationSensor;         // Autoconnect
-  aux[F("useRTCSensor")].value = useRTCSensor;                     // Autoconnect
+  aux[F("beenodename")].value = _CfgStorage.beenodename;                       // Autoconnect
+  aux[F("hivename")].value = _CfgStorage.hivename;                             // Autoconnect
+  aux[F("deepSleepTime")].value = _CfgStorage.deepSleepTime;                   // Autoconnect
+  aux[F("useDeepSleep")].value = _CfgStorage.useDeepSleep;                     // Autoconnect
+  aux[F("useTemperatureSensor")].value = _CfgStorage.useTemperatureSensor;     // Autoconnect
+  aux[F("useVibrationSensor")].value = _CfgStorage.useVibrationSensor;         // Autoconnect
+  aux[F("useRTCSensor")].value = _CfgStorage.useRTCSensor;                     // Autoconnect
 
-  aux[F("acc_datarate")].value = acc_datarate;                     // Autoconnect
-  aux[F("acc_range")].value = acc_range;                           // Autoconnect
-  aux[F("acc_usefullres")].value = acc_usefullres;                 // Autoconnect
-  aux[F("sdaio")].value = sdaio;                                   // AXDL345, RTC
-  aux[F("sdlio")].value = sdlio;                                   // AXDL345, RTC
-  aux[F("useSDLogging")].value = useSDLogging;                     // MQTT  
-  aux[F("useMQTT")].value = useMQTT;                               // MQTT  
-  aux[F("mqtt_topic")].value = mqtt_topic;                         // MQTT  
-  aux[F("mqtt_SSID")].value = mqtt_SSID;                           // MQTT  
-  aux[F("mqtt_wifi_pwd")].value = mqtt_wifi_pwd;                   // MQTT  
-  aux[F("mqttusername")].value = mqttusername;                     // MQTT  
-  aux[F("mqttpassword")].value = mqttpassword;                     // MQTT  
-  aux[F("mqtt_server")].value = mqtt_server;                       // MQTT  
+  aux[F("acc_datarate")].value = _CfgStorage.acc_datarate;                     // Autoconnect
+  aux[F("acc_range")].value = _CfgStorage.acc_range;                           // Autoconnect
+  aux[F("acc_usefullres")].value = _CfgStorage.acc_usefullres;                 // Autoconnect
+  aux[F("sdaio")].value = _CfgStorage.sdaio;                                   // AXDL345, RTC
+  aux[F("sdlio")].value = _CfgStorage.sdlio;                                   // AXDL345, RTC
+  aux[F("useSDLogging")].value = _CfgStorage.useSDLogging;                     // MQTT  
+  aux[F("useMQTT")].value = _CfgStorage.useMQTT;                               // MQTT  
+  aux[F("mqtt_topic")].value = _CfgStorage.mqtt_topic;                         // MQTT  
+  aux[F("mqtt_SSID")].value = _CfgStorage.mqtt_SSID;                           // MQTT  
+  aux[F("mqtt_wifi_pwd")].value = _CfgStorage.mqtt_wifi_pwd;                   // MQTT  
+  aux[F("mqttusername")].value = _CfgStorage.mqttusername;                     // MQTT  
+  aux[F("mqttpassword")].value = _CfgStorage.mqttpassword;                     // MQTT  
+  aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT  
   
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect
