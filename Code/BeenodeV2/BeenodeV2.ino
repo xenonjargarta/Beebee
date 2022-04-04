@@ -99,6 +99,7 @@ const char* userId = "anyone";       // Autoconnect
 
 String beenodename = "dummy";    // Autoconnect
 String hivename = "dummy";       // Autoconnect
+
 int deepSleepTime = 20;   // Autoconnect
 bool useTemperatureSensor = false;
 bool useVibrationSensor = false;
@@ -109,9 +110,14 @@ float acc_datarate = 3200.0f;
 bool acc_usefullres = false;
 int acc_range = 16;
 
+String    sdaio;        //ADXL345, RTC
+String    sdlio;        //ADXL345, RTC
+
 const char* mqttUser = "";          // MQTT
 const char* mqttPassword = "";      // MQTT
-bool allowedtosendQTT = false;
+bool allowedtosendQTT = false;      
+
+bool useSDLogging = false;          // SDLogging
 
 EspMQTTClient client;          // using the default constructor
 
@@ -251,14 +257,17 @@ void handleFileRead(void) {
 
 void setup() 
 {
+
   delay(1000);                  // ESP startup
   Serial.begin(115200);         // ESP Console
   Serial.println();             // ESP Console
   SetupAutoConnect();           // Autoconnect
   if(useRTCSensor == true || useVibrationSensor == true) // DS3231-RTC, ADXL234
    { 
-      Wire.begin(18,23);
-      Serial.println("done");
+    int sda = sdaio.substring(0,2).toInt();
+    int sdl = sdlio.substring(0,2).toInt();
+      Wire.begin(sda,sdl);
+      Serial.println("SDA/ SDL done " + sdaio + "/" + sdlio);
    }            // DS3231-RTC, ADXL234
   
   if(useVibrationSensor) { SetupVibration(); }             // Vibration
@@ -803,6 +812,13 @@ void getSensorParams(AutoConnectAux& aux)
   acc_usefullres  = aux[F("acc_usefullres")].as<AutoConnectCheckbox>().checked; // Autoconnect
   AutoConnectRadio& range = aux[F("acc_range")].as<AutoConnectRadio>(); // Autoconnect
   acc_range = range.value().toInt();    // Autoconnect
+  useSDLogging = aux[F("useSDLogging")].as<AutoConnectCheckbox>().checked; // SDLogging
+ 
+  sdaio = aux[F("sdaio")].value;                           // Autoconnect
+  sdaio.trim();  
+  
+  sdlio = aux[F("sdlio")].value;                           // Autoconnect
+  sdlio.trim();  
 
   Serial.println(" ");                                              // Autoconnect 
   Serial.println("Curren Configuration:");                          // Autoconnect 
@@ -829,6 +845,16 @@ void getSensorParams(AutoConnectAux& aux)
 
     Serial.print("acc_range: ");                                 // Autoconnect 
   Serial.println(acc_range);                                     // Autoconnect 
+
+    Serial.print("sdaio: ");                                 // Autoconnect 
+  Serial.println(sdaio);                                     // Autoconnect 
+      Serial.print("sdlio: ");                                 // ADXL345, RTC 
+  Serial.println(sdlio);                                     // ADXL345, RTC 
+
+      Serial.print("useSDLogging: ");                                 // SDLogging 
+  Serial.println(useSDLogging);                                     // SDLogging
+  
+
 
   
   Serial.println("CFG Loaded end");                                 // Autoconnect 
@@ -923,7 +949,7 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres"});     // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging"});     // Autoconnect
   param.close();                                                      // Autoconnect
   needToReboot = true;                                                // Autoconnect
   Serial.println("Need to reboot device");                            // Autoconnect
@@ -940,7 +966,10 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("acc_datarate")].value = acc_datarate;                                 // Autoconnect
   aux[F("acc_range")].value = acc_range;                                     // Autoconnect
   aux[F("acc_usefullres")].value = acc_usefullres;                                                 // Autoconnect
-
-
+  aux[F("sdaio")].value = sdaio;                                                 // AXDL345, RTC
+  aux[F("sdlio")].value = sdlio;                                                 // AXDL345, RTC
+  aux[F("useSDLogging")].value = useSDLogging;     
+  
+  
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect

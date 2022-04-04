@@ -311,6 +311,24 @@
         "type": "ACText",
         "format": "Vibration datra rate (Hz): %s",
         "posterior": "br"
+      },
+      {
+        "name": "sdaio",
+        "type": "ACText",
+        "format": "SDA: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "sdlio",
+        "type": "ACText",
+        "format": "SDL: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useSDLogging",
+        "type": "ACText",
+        "format": "Use SD Logging: %s",
+        "posterior": "br"
       }
     ]
   }
