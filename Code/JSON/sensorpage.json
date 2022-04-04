@@ -38,12 +38,12 @@
         "type": "ACElement",
         "value": "<hr>"
       },
-	  {
+	    {
         "name": "newline1",
         "type": "ACElement",
         "value": "<hr>"
       },
-	  {
+	    {
         "name": "useWeigthSensor",
         "type": "ACCheckbox",
         "value": "unique",
@@ -68,12 +68,12 @@
         "label": "Deep Sleep Time (Sec)",
         "pattern": "^[0-9]$"
       },
-	  {
+	    {
         "name": "newline3",
         "type": "ACElement",
         "value": "<hr>"
       },
- 	  {
+ 	    {
         "name": "useVibrationSensor",
         "type": "ACCheckbox",
         "value": "unique",
@@ -153,36 +153,36 @@
         "value": "<hr>"
       },
       {
-        "name": "useMQQTServer",
+        "name": "useMQTT",
         "type": "ACCheckbox",
         "value": "unique",
         "label": "Use mqtt server",
         "checked": false
       },
       {
-        "name": "mqttserver",
+        "name": "mqtt_server",
         "type": "ACInput",
         "label": "Server",
         "pattern": "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$",
-        "placeholder": "MQTT broker server"
+        "placeholder": "MQTT broker server (IP)"
       },
       {
-        "name": "topic",
+        "name": "mqtt_topic",
         "type": "ACInput",
         "label": "Topic"
       },
       {
-        "name": "SSID",
+        "name": "mqtt_SSID",
         "type": "ACInput",
         "label": "SSID"
       },
       {
-        "name": "wifipwd",
+        "name": "mqtt_wifi_pwd",
         "type": "ACInput",
         "label": "Wifi Password"
       },
       {
-        "name": "umqttusername",
+        "name": "mqttusername",
         "type": "ACInput",
         "label": "MQTT Username (leave blank for anonym)"
       },
@@ -328,6 +328,48 @@
         "name": "useSDLogging",
         "type": "ACText",
         "format": "Use SD Logging: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useMQTT",
+        "type": "ACText",
+        "format": "Use MQTT Server: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqtt_server",
+        "type": "ACText",
+        "format": "MQTT Server IP: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqtt_SSID",
+        "type": "ACText",
+        "format": "MQTT SSID: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqtt_wifi_pwd",
+        "type": "ACText",
+        "format": "MQTT Wifi PAssword: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqttusername",
+        "type": "ACText",
+        "format": "MQTT username: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqttpassword",
+        "type": "ACText",
+        "format": "MQTT Password: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqtt_topic",
+        "type": "ACText",
+        "format": "MQTT Topic: %s",
         "posterior": "br"
       }
     ]
