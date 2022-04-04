@@ -105,9 +105,7 @@ Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
 const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
-const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect
-
-bool allowedtosendQTT = false;      
+const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect      
 
 EspMQTTClient client;          // using the default constructor
 
@@ -465,13 +463,12 @@ void SetupCommunication()
 
 void onConnectionEstablished()
 {
-  // Subscribe to "mytopic/test" and display received message to Serial
-  client.subscribe("test/topic", [](const String & payload) {
-    Serial.println(payload);
-  });
+    const char *mqtttopicChar = _CfgStorage.mqtt_topic.c_str();             // MQTT
+    // Subscribe to "mytopic/test" and display received message to Serial
+    // client.subscribe("test/topic", [](const String & payload) { Serial.println(payload); });
 
-  // Publish a message to "mytopic/test"
-  client.publish("test/topic", "This is a message"); // You can activate the retain flag by setting the third parameter to true
+    // Publish a message to "mytopic/test"
+    client.publish(mqtttopicChar, "This is a message"); // You can activate the retain flag by setting the third parameter to true
 }
 
 void SetupDeepSleep()                                                               //DeepSleep
