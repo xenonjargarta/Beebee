@@ -178,6 +178,11 @@
         "label": "Topic"
       },
       {
+        "name": "mqtt_messagedelay",
+        "type": "ACInput",
+        "label": "Message Delay"
+      },
+      {
         "name": "mqtt_SSID",
         "type": "ACInput",
         "label": "SSID"
@@ -236,7 +241,7 @@
       {
         "name": "save",
         "type": "ACSubmit",
-        "value": "Save&amp;Start",
+        "value": "Save",
         "uri": "/sensor_save"
       },
       {
@@ -382,6 +387,13 @@
         "name": "mqtt_topic",
         "type": "ACText",
         "format": "MQTT Topic: %s",
+        "posterior": "br"
+      }
+      ,
+      {
+        "name": "mqtt_messagedelay",
+        "type": "ACText",
+        "format": "MQTT Message Delay: %s",
         "posterior": "br"
       }
     ]

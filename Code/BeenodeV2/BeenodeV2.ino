@@ -67,6 +67,7 @@ struct CfgStorage {
   String mqtt_port;               // MQTT
   bool useDeepSleep;              // DeepSleep
   bool useSDLogging;              // SDLogging
+  String mqtt_messagedelay;        // MQTT
 };
 
 struct SensorValues 
@@ -79,7 +80,7 @@ struct SensorValues
   String senortime;       // RTC 
 };
 
-CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false};
+CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000"};
 SensorValues _SensorValues = {"", "", "", "", "", ""};
 
 String CreateMessage()
@@ -95,15 +96,15 @@ String CreateMessage()
     message += ";";                                 // ADXL345
     //message += "H1)";                               // ADXL345
     message += _SensorValues.vibration_x;           // ADXL345
-    message += ";)";                               // ADXL345
+    message += ";";                               // ADXL345
     message += _SensorValues.vibration_x;           // ADXL345
-    message += ";)";                               // ADXL345
+    message += ";";                               // ADXL345
     message += _SensorValues.vibration_y;           // ADXL345
   }                                                 // ADXL345
   if(_CfgStorage.useTemperatureSensor)              // TOneWireTemperatur
   {                                                 // TOneWireTemperatur
     message += ";";                                 // TOneWireTemperatur
-    message += "C1)";                               // TOneWireTemperatur
+    //message += "C1)";                               // TOneWireTemperatur
     message += _SensorValues.temperatur;            // TOneWireTemperatur
   }                                                 // TOneWireTemperatur
   
@@ -556,6 +557,7 @@ void SetupRTC()
 
 void loop() 
 {
+  delay(_CfgStorage.mqtt_messagedelay.toInt());
   HandleWebPage();              // Autoconnect
   if(!_CfgStorage.needToReboot)
   {
@@ -842,6 +844,9 @@ void getSensorParams(AutoConnectAux& aux)
   _CfgStorage.mqtt_topic.trim();   
   _CfgStorage.mqtt_port = aux[F("mqtt_port")].value;                          // MQTT
   _CfgStorage.mqtt_port.trim();   
+  _CfgStorage.mqtt_messagedelay = aux[F("mqtt_messagedelay")].value;                          // MQTT
+  _CfgStorage.mqtt_messagedelay.trim();  
+  
   
  
   _CfgStorage.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
@@ -904,6 +909,10 @@ void getSensorParams(AutoConnectAux& aux)
 
   Serial.print("mqtt_server: ");                                     // MQTT 
   Serial.println(_CfgStorage.mqtt_port);                                       // MQTT
+
+  Serial.print("mqtt_messagedelay: ");                                     // MQTT 
+  Serial.println(_CfgStorage.mqtt_messagedelay);                                       // MQTT
+  
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -946,11 +955,11 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // The entered value is owned by AutoConnectAux of /mqtt_setting.
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
-  File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                  // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server", "mqtt_port"});     // Autoconnect
-  param.close();                                                      // Autoconnect
-  _CfgStorage.needToReboot = true;                                                // Autoconnect
-  Serial.println("Need to reboot device");                            // Autoconnect
+  File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server", "mqtt_port" ,"mqtt_messagedelay"});     // Autoconnect
+  param.close();                                                            // Autoconnect
+  _CfgStorage.needToReboot = true;                                          // Autoconnect
+  Serial.println("Need to reboot device");                                  // Autoconnect
 
  // Echo back saved parameters to AutoConnectAux page.
   aux[F("beenodename")].value = _CfgStorage.beenodename;                       // Autoconnect
@@ -975,6 +984,8 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("mqttpassword")].value = _CfgStorage.mqttpassword;                     // MQTT  
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT  
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT 
+  aux[F("mqtt_messagedelay")].value = _CfgStorage.mqtt_messagedelay;           // MQTT 
+  
 
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect
