@@ -86,7 +86,7 @@ String CreateMessage()
   if(_CfgStorage.useRTCSensor)
   {
     message += "T)";
-    message += _SensorValues.temperatur;
+    message += _SensorValues.senortime;
   }
   if(_CfgStorage.useVibrationSensor)
   {
@@ -652,21 +652,12 @@ void HandleHumadity()
 void HandleRTC()
 {
     delay(10);                                        //DS3231-RTC
-    
+    char buf[20];
     DateTime now = myRTC.now();                       //DS3231-RTC
-    
-    Serial.print(now.year(), DEC);                    //DS3231-RTC
-    Serial.print('/');                                //DS3231-RTC
-    Serial.print(now.month(), DEC);                   //DS3231-RTC
-    Serial.print('/');                                //DS3231-RTC
-    Serial.print(now.day(), DEC);                     //DS3231-RTC
-    Serial.print(' ');                                //DS3231-RTC
-    Serial.print(now.hour(), DEC);                    //DS3231-RTC
-    Serial.print(':');                                //DS3231-RTC
-    Serial.print(now.minute(), DEC);                  //DS3231-RTC
-    Serial.print(':');                                //DS3231-RTC
-    Serial.print(now.second(), DEC);                  //DS3231-RTC
-    Serial.println();                                 //DS3231-RTC
+    snprintf(buf,sizeof(buf),"%02d/%02d/%4d %02d:%02d:%02d", now.day(), now.month(), now.year(), now.hour(), now.minute(), now.second());
+    _SensorValues.senortime = buf;
+
+    Serial.println(buf);                               //DS3231-RTC
     
     Serial.print(" since midnight 1/1/1970 = ");      //DS3231-RTC
     Serial.print(now.unixtime());                     //DS3231-RTC
