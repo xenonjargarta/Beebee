@@ -1,18 +1,18 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1073366/1966080  Bytes (54%) 
-                          Used memory for globale variabel 45980 Bytes (15%)
+                          Used programm memory 1072842/1966080  Bytes (54%) 
+                          Used memory for globale variabel 46068 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 281700 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 281612 Bytes (Max 327680 Bytes)
       
       Feature:            (x) Webpage 
                           (x) Wifi Lifecycle
                           (in progress) Configuration management (BeeSensors)
                           (x) Configuration management 
-                          (in progress) MQTT
+                          (x) MQTT
                           (in progress) Vibration Sensor (ADXL345)
                           ( ) Weight Sensor (HX711)
-                          (in progress) Temperature Sensor (DS)
+                          (x) Temperature Sensor (DS)
                           ( ) Humadity Sensor ()
                           (in progress) RTC (DS3231)
                           ( ) Power management
@@ -67,11 +67,56 @@ struct CfgStorage {
   bool useSDLogging;              // SDLogging
 };
 
-CfgStorage _CfgStorage = {"","","", "", 20, false, false, false, false, false, 3200, false, 16, false,"","","","","","", "", false, false};
+struct SensorValues 
+{
+  String temperatur;      // DS 
+  String vibration_z;     // ADXL345 
+  String vibration_x;     // ADXL345 
+  String vibration_y;     // ADXL345 
+  String weigth;          // HDX117 
+  String senortime;       // RTC 
+};
+
+CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false};
+SensorValues _SensorValues = {"", "", "", "", "", ""};
+
+String CreateMessage()
+{
+  String message ="";
+  if(_CfgStorage.useRTCSensor)
+  {
+    message += "T)";
+    message += _SensorValues.temperatur;
+  }
+  if(_CfgStorage.useVibrationSensor)
+  {
+    message += ";";
+    message += "H1)";
+    message += _SensorValues.vibration_x;
+    message += "H2)";
+    message += _SensorValues.vibration_x;
+    message += "H3)";
+    message += _SensorValues.vibration_y;
+  }
+  if(_CfgStorage.useTemperatureSensor)
+  {
+    message += ";";
+    message += "C1)";
+    message += _SensorValues.temperatur;
+  }
+  
+  return message;
+}
+
 // ------------------------------ Definitions (Global) ------------------------------------------
 #define FORMAT_ON_FAIL  true        // Autoconnect
 #define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))   // Autoconnect
 #define GET_HOSTNAME()  (WiFi.getHostname())                  // Autoconnect
+// Data wire is plugged into digital pin 2 on the Arduino
+#define ONE_WIRE_BUS 19              // OneWireTemperatur
+/* Conversion factor for micro seconds to seconds */
+#define uS_TO_S_FACTOR 1000000      //DeepSleep
+
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
 WiFiWebServer server;               // Autoconnect
@@ -82,21 +127,10 @@ AutoConnectConfig config("NewBeeNode", "1234567890");         // Autoconnect
 AutoConnectAux auxUpload;           // Autoconnect
 AutoConnectAux auxBrowse;           // Autoconnect
 RTClib myRTC;                       // DS3231-RTC
-
-// Data wire is plugged into digital pin 2 on the Arduino
-#define ONE_WIRE_BUS 19              // OneWireTemperatur
-
 // Setup a oneWire instance to communicate with any OneWire device
 OneWire oneWire(ONE_WIRE_BUS);       // OneWireTemperatur 
-
 // Pass oneWire reference to DallasTemperature library
 DallasTemperature sensors(&oneWire); // OneWireTemperatur
-
-/* Conversion factor for micro seconds to seconds */
-#define uS_TO_S_FACTOR 1000000      //DeepSleep
-/* Time ESP32 will go to sleep (in seconds) */ 
-#define TIME_TO_SLEEP  10           //DeepSleep
-
 RTC_DATA_ATTR int bootCount = 0;    //DeepSleep
 
 /* Assign a unique ID to this sensor at the same time */
@@ -261,12 +295,17 @@ void setup()
   SetupCommunication();         // Communication
   SetupPowerManagement();       // Power
   SetupHumadity();              // Humadity
-  if(_CfgStorage.useRTCSensor) {  SetupRTC();     }              // RTC
+  if(_CfgStorage.useSDLogging) { SetupLogging();   }
+  if(_CfgStorage.useRTCSensor) { SetupRTC();       }              // RTC
   if(_CfgStorage.useDeepSleep) { SetupDeepSleep(); }            // DeepSleep
   if(_CfgStorage.useTemperatureSensor) { SetupTemperature(); }    // Temperatur
 }
 
 ////////// Setup function
+void SetupLogging()
+{
+    
+}
 
 void SetupAutoConnect()
 {
@@ -447,28 +486,27 @@ void SetupWeigth()
 
 void SetupCommunication()
 {
-  client.enableDebuggingMessages();                                     // MQTT
-  const char *ssidchar = _CfgStorage.mqtt_SSID.c_str();                 // MQTT
-  const char *wifipwdChar = _CfgStorage.mqtt_wifi_pwd.c_str();          // MQTT
-  client.setWifiCredentials(ssidchar, wifipwdChar);                     // MQTT
-  
-  const char *beenodechar = _CfgStorage.beenodename.c_str();            // MQTT
-  client.setMqttClientName(beenodechar);                                // MQTT
-    
-  const char *serverChar = _CfgStorage.mqtt_server.c_str();             // MQTT
-  const char *usernameChar = _CfgStorage.mqttusername.c_str();          // MQTT
-  const char *passwordChar = _CfgStorage.mqttpassword.c_str();          // MQTT
-  client.setMqttServer(serverChar, usernameChar, passwordChar, _CfgStorage.mqtt_port.toInt());   // MQTT
+  if(_CfgStorage.useMQTT)                                                   // MQTT
+  {                                                                         // MQTT
+      client.enableDebuggingMessages();                                     // MQTT
+      const char *ssidchar = _CfgStorage.mqtt_SSID.c_str();                 // MQTT
+      const char *wifipwdChar = _CfgStorage.mqtt_wifi_pwd.c_str();          // MQTT
+      client.setWifiCredentials(ssidchar, wifipwdChar);                     // MQTT
+      
+      const char *beenodechar = _CfgStorage.beenodename.c_str();            // MQTT
+      client.setMqttClientName(beenodechar);                                // MQTT
+        
+      const char *serverChar = _CfgStorage.mqtt_server.c_str();             // MQTT
+      const char *usernameChar = _CfgStorage.mqttusername.c_str();          // MQTT
+      const char *passwordChar = _CfgStorage.mqttpassword.c_str();          // MQTT
+      client.setMqttServer(serverChar, usernameChar, passwordChar, _CfgStorage.mqtt_port.toInt());   // MQTT
+  }
 }
 
+//Required implementation for MQTT Client
 void onConnectionEstablished()
 {
-    const char *mqtttopicChar = _CfgStorage.mqtt_topic.c_str();             // MQTT
-    // Subscribe to "mytopic/test" and display received message to Serial
-    // client.subscribe("test/topic", [](const String & payload) { Serial.println(payload); });
-
-    // Publish a message to "mytopic/test"
-    client.publish(mqtttopicChar, "This is a message"); // You can activate the retain flag by setting the third parameter to true
+    
 }
 
 void SetupDeepSleep()                                                               //DeepSleep
@@ -520,7 +558,7 @@ void loop()
     if(_CfgStorage.useTemperatureSensor) { HandleTemperature(); }     //Temperatur
     HandleWeigth(); 
     if(_CfgStorage.useVibrationSensor && _CfgStorage.setupReadyVibration) { HandleVibration(); }  //ADXL345
-    HandleCommunication(); 
+    { HandleCommunication();  } // MQTT
     HandlePowerManagement(); 
     HandleHumadity(); 
     if(_CfgStorage.useRTCSensor) { HandleRTC();             }    //DS3231-RTC
@@ -543,12 +581,13 @@ void HandleTemperature()
 {
   // Send the command to get temperatures
   sensors.requestTemperatures();                          //OneWireTemperature
-
+  _SensorValues.temperatur = sensors.getTempCByIndex(0);
   //print the temperature in Celsius
   Serial.print("Temperature: ");                          //OneWireTemperature
-  Serial.print(sensors.getTempCByIndex(0));               //OneWireTemperature
+  Serial.print(_SensorValues.temperatur);               //OneWireTemperature
   Serial.print((char)176);//shows degrees character       //OneWireTemperature
   Serial.print("C  |  ");                                 //OneWireTemperature
+  
 }
 
 void HandleWeigth()
@@ -569,7 +608,21 @@ void HandleVibration()                                                   //ADXL3
 
 void HandleCommunication()
 {     
-   client.loop();
+  String message = CreateMessage();
+
+  if(_CfgStorage.useMQTT)
+  {
+    if(client.isConnected())
+    {
+      const char *mqtttopicChar = _CfgStorage.mqtt_topic.c_str();             // MQTT
+      // Subscribe to "mytopic/test" and display received message to Serial
+      // client.subscribe("test/topic", [](const String & payload) { Serial.println(payload); });
+    
+      // Publish a message to "mytopic/test"
+      client.publish(mqtttopicChar, message); // You can activate the retain flag by setting the third parameter to true
+    }
+    client.loop();
+  }
 }
 
 
