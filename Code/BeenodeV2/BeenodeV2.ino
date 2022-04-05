@@ -1,6 +1,6 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1072842/1966080  Bytes (54%) 
+                          Used programm memory 1072834/1966080  Bytes (54%) 
                           Used memory for globale variabel 46068 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
                           Still free memory for local variable 281612 Bytes (Max 327680 Bytes)
@@ -598,12 +598,16 @@ void HandleVibration()                                                   //ADXL3
  /* Get a new sensor event */ 
   sensors_event_t event;                                                 //ADXL345
   accel.getEvent(&event);                                                //ADXL345
- 
+
+  _SensorValues.vibration_x =event.acceleration.x;
+  _SensorValues.vibration_y =event.acceleration.y;
+  _SensorValues.vibration_z =event.acceleration.z;
+  
   /* Display the results (acceleration is measured in m/s^2) */
-  Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print("  ");                            //ADXL345
-  Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("  ");                            //ADXL345
-  Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");Serial.println("m/s^2 ");   //ADXL345
-  delay(1000);
+  Serial.print("X: "); Serial.print(_SensorValues.vibration_x); Serial.print("  ");                            //ADXL345
+  Serial.print("Y: "); Serial.print(_SensorValues.vibration_y); Serial.print("  ");                            //ADXL345
+  Serial.print("Z: "); Serial.print(_SensorValues.vibration_z); Serial.print("  ");Serial.println("m/s^2 ");   //ADXL345
+  delay(10);
 }
 
 void HandleCommunication()
@@ -960,6 +964,5 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT  
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT 
 
-  
   return String();                                                                             // Autoconnect
 }                                                                                              // Autoconnect
