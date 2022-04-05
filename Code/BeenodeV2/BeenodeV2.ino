@@ -1,6 +1,6 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1072834/1966080  Bytes (54%) 
+                          Used programm memory 1073058/1966080  Bytes (54%) 
                           Used memory for globale variabel 46068 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
                           Still free memory for local variable 281612 Bytes (Max 327680 Bytes)
@@ -10,11 +10,11 @@
                           (in progress) Configuration management (BeeSensors)
                           (x) Configuration management 
                           (x) MQTT
-                          (in progress) Vibration Sensor (ADXL345)
+                          (x) Vibration Sensor (ADXL345)
                           ( ) Weight Sensor (HX711)
                           (x) Temperature Sensor (DS)
                           ( ) Humadity Sensor ()
-                          (in progress) RTC (DS3231)
+                          (x) RTC (DS3231)
                           ( ) Power management
                           (in progress) Deep Sleep (ESP)
                           ( ) Lora Communication
@@ -24,7 +24,9 @@
       Scenario supported: (X) Always On with webserver
                           ( ) Sleep on always power
                           ( ) Sleep on battery
-                          ( ) One time startup
+                          ( ) One time st
+                          
+                          artup
 */
 
 // ------------------------------ Includes ------------------------------------------
@@ -83,27 +85,27 @@ SensorValues _SensorValues = {"", "", "", "", "", ""};
 String CreateMessage()
 {
   String message ="";
-  if(_CfgStorage.useRTCSensor)
-  {
-    message += "T)";
-    message += _SensorValues.senortime;
-  }
-  if(_CfgStorage.useVibrationSensor)
-  {
-    message += ";";
-    message += "H1)";
-    message += _SensorValues.vibration_x;
-    message += "H2)";
-    message += _SensorValues.vibration_x;
-    message += "H3)";
-    message += _SensorValues.vibration_y;
-  }
-  if(_CfgStorage.useTemperatureSensor)
-  {
-    message += ";";
-    message += "C1)";
-    message += _SensorValues.temperatur;
-  }
+  if(_CfgStorage.useRTCSensor)                      // RTC
+  {                                                // RTC
+    message += "T)";                               // RTC
+    message += _SensorValues.senortime;             // RTC
+  }                                                // RTC
+  if(_CfgStorage.useVibrationSensor)               // ADXL345
+  {                                                 // ADXL345
+    message += ";";                                 // ADXL345
+    message += "H1)";                               // ADXL345
+    message += _SensorValues.vibration_x;           // ADXL345
+    message += "H2)";                               // ADXL345
+    message += _SensorValues.vibration_x;           // ADXL345
+    message += "H3)";                               // ADXL345
+    message += _SensorValues.vibration_y;           // ADXL345
+  }                                                 // ADXL345
+  if(_CfgStorage.useTemperatureSensor)              // TOneWireTemperatur
+  {                                                 // TOneWireTemperatur
+    message += ";";                                 // TOneWireTemperatur
+    message += "C1)";                               // TOneWireTemperatur
+    message += _SensorValues.temperatur;            // TOneWireTemperatur
+  }                                                 // TOneWireTemperatur
   
   return message;
 }
@@ -116,6 +118,7 @@ String CreateMessage()
 #define ONE_WIRE_BUS 19              // OneWireTemperatur
 /* Conversion factor for micro seconds to seconds */
 #define uS_TO_S_FACTOR 1000000      //DeepSleep
+#define BUTTON_PIN 37 // GIOP21 pin connected to button
 
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
@@ -281,6 +284,7 @@ void setup()
 
   delay(1000);                  // ESP startup
   Serial.begin(115200);         // ESP Console
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
   Serial.println();             // ESP Console
   SetupAutoConnect();           // Autoconnect
   if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true) // DS3231-RTC, ADXL234
@@ -640,12 +644,20 @@ void HandleDeepSleep()
   sleep was started, it will sleep forever unless hardware
   reset occurs.
   */
-  Serial.println("Going to sleep now");                                             //DeepSleep
-  delay(1000);                                                                      //DeepSleep
-  Serial.flush();                                                                   //DeepSleep
-  esp_deep_sleep_start();                                                           //DeepSleep
-  Serial.println("This will never be printed");                                     //DeepSleep
-}
+  Serial.println(digitalRead(BUTTON_PIN));                                            // DeepSleep
+  if(digitalRead(BUTTON_PIN) == 0 && _CfgStorage.useDeepSleep == true)                // DeepSleep
+  {                                                                                   // DeepSleep
+    _CfgStorage.useDeepSleep = false;                                                 // DeepSleep
+  }                                                                                   // DeepSleep
+  else                                                                                // DeepSleep
+  {                                                                                   // DeepSleep
+    Serial.println("Going to sleep now");                                             // DeepSleep
+    delay(1000);                                                                      // DeepSleep
+    Serial.flush();                                                                   // DeepSleep
+    esp_deep_sleep_start();                                                           // DeepSleep
+    Serial.println("This will never be printed");                                     // DeepSleep
+  }                                                                                   // DeepSleep
+}                                                                                     // DeepSleep
 
 void HandlePowerManagement()
 {}
