@@ -87,17 +87,17 @@ String CreateMessage()
   String message ="";
   if(_CfgStorage.useRTCSensor)                      // RTC
   {                                                // RTC
-    message += "T)";                               // RTC
+    //message += "T)";                               // RTC
     message += _SensorValues.senortime;             // RTC
   }                                                // RTC
   if(_CfgStorage.useVibrationSensor)               // ADXL345
   {                                                 // ADXL345
     message += ";";                                 // ADXL345
-    message += "H1)";                               // ADXL345
+    //message += "H1)";                               // ADXL345
     message += _SensorValues.vibration_x;           // ADXL345
-    message += "H2)";                               // ADXL345
+    message += ";)";                               // ADXL345
     message += _SensorValues.vibration_x;           // ADXL345
-    message += "H3)";                               // ADXL345
+    message += ";)";                               // ADXL345
     message += _SensorValues.vibration_y;           // ADXL345
   }                                                 // ADXL345
   if(_CfgStorage.useTemperatureSensor)              // TOneWireTemperatur
@@ -670,7 +670,7 @@ void HandleRTC()
     delay(10);                                        //DS3231-RTC
     char buf[20];
     DateTime now = myRTC.now();                       //DS3231-RTC
-    snprintf(buf,sizeof(buf),"%02d/%02d/%4d %02d:%02d:%02d", now.day(), now.month(), now.year(), now.hour(), now.minute(), now.second());
+    snprintf(buf,sizeof(buf),"%02d.%02d.%4d/%02d:%02d:%02d", now.day(), now.month(), now.year(), now.hour(), now.minute(), now.second());
     _SensorValues.senortime = buf;
 
     Serial.println(buf);                               //DS3231-RTC
