@@ -230,6 +230,12 @@
         "checked": false
       },
       {
+        "name": "sd_logfilepath",
+        "type": "ACInput",
+        "label": "Log file path",
+        "placeholder": "i.e. /values.txt"
+      },
+      {
         "name": "newline13",
         "type": "ACElement",
         "value": "<hr>"
@@ -388,14 +394,19 @@
         "type": "ACText",
         "format": "MQTT Topic: %s",
         "posterior": "br"
-      }
-      ,
+      },
       {
         "name": "mqtt_messagedelay",
         "type": "ACText",
         "format": "MQTT Message Delay: %s",
         "posterior": "br"
-      }
+      },
+      {
+        "name": "sd_logfilepath",
+        "type": "ACText",
+        "format": "Log file path: %s",
+        "posterior": "br"
+      } 
     ]
   }
 ]

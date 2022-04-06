@@ -7,7 +7,6 @@
       
       Features:           (x) Webpage 
                           (x) Wifi Lifecycle
-                          (in progress) Configuration management (BeeSensors)
                           (x) Configuration management 
                           (x) MQTT
                           (x) Vibration Sensor (ADXL345)
@@ -19,7 +18,7 @@
                           (in progress) Deep Sleep (ESP)
                           ( ) Lora Communication
                           ( ) SIM Communication
-                          (in progress) SD Card
+                          (x) SD Card
 
       Libaries            Express if ESP32 Boards - ESP32 by Espressif Systems - (https://dl.espressif.com/dl/package_esp32_index.json) 1.0.6
                           OneWire 2.3.6
@@ -41,6 +40,8 @@
 #include <Wire.h>                   // ADXL345, DS3231
 #include <Adafruit_Sensor.h>        // ADXL345
 #include <Adafruit_ADXL345_U.h>     // ADXL345
+#include "SD.h"                     // SDCARD
+#include "SPI.h"                    // SDCARD
 #include <AutoConnect.h>            // Autoconnect
 #include <WiFi.h>                   // Autoconnect
 #include <WebServer.h>              // Autoconnect
@@ -75,7 +76,8 @@ struct CfgStorage {
   String mqtt_port;               // MQTT
   bool useDeepSleep;              // DeepSleep
   bool useSDLogging;              // SDLogging
-  String mqtt_messagedelay;        // MQTT
+  String mqtt_messagedelay;       // MQTT
+  String sd_logfilepath;             // SDLogging
 };
 
 struct SensorValues 
@@ -88,31 +90,31 @@ struct SensorValues
   String senortime;       // RTC 
 };
 
-CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000"};
+CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000", "/values.txt"};
 SensorValues _SensorValues = {"", "", "", "", "", ""};
 
 String CreateMessage()
 {
   String message ="";
   if(_CfgStorage.useRTCSensor)                      // RTC
-  {                                                // RTC
-    //message += "T)";                               // RTC
+  {                                                 // RTC
+    //message += "T)";                              // RTC
     message += _SensorValues.senortime;             // RTC
-  }                                                // RTC
-  if(_CfgStorage.useVibrationSensor)               // ADXL345
+  }                                                 // RTC
+  if(_CfgStorage.useVibrationSensor)                // ADXL345
   {                                                 // ADXL345
     message += ";";                                 // ADXL345
-    //message += "H1)";                               // ADXL345
+    //message += "H1)";                             // ADXL345
     message += _SensorValues.vibration_x;           // ADXL345
-    message += ";";                               // ADXL345
+    message += ";";                                 // ADXL345
     message += _SensorValues.vibration_x;           // ADXL345
-    message += ";";                               // ADXL345
+    message += ";";                                 // ADXL345
     message += _SensorValues.vibration_y;           // ADXL345
   }                                                 // ADXL345
   if(_CfgStorage.useTemperatureSensor)              // TOneWireTemperatur
   {                                                 // TOneWireTemperatur
     message += ";";                                 // TOneWireTemperatur
-    //message += "C1)";                               // TOneWireTemperatur
+    //message += "C1)";                             // TOneWireTemperatur
     message += _SensorValues.temperatur;            // TOneWireTemperatur
   }                                                 // TOneWireTemperatur
   
@@ -124,10 +126,14 @@ String CreateMessage()
 #define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))   // Autoconnect
 #define GET_HOSTNAME()  (WiFi.getHostname())                  // Autoconnect
 // Data wire is plugged into digital pin 2 on the Arduino
-#define ONE_WIRE_BUS 19              // OneWireTemperatur
+#define ONE_WIRE_BUS 19                                       // OneWireTemperatur
 /* Conversion factor for micro seconds to seconds */
-#define uS_TO_S_FACTOR 1000000      //DeepSleep
-#define BUTTON_PIN 37 // GIOP21 pin connected to button
+#define uS_TO_S_FACTOR 1000000                                //DeepSleep
+#define BUTTON_PIN 37                                         // GIOP21 pin connected to button
+#define SCK   14                                              // SDCARD
+#define MISO  12                                              // SDCARD
+#define MOSI  13                                              // SDCARD
+#define CS    15                                              // SDCARD
 
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
@@ -143,7 +149,8 @@ RTClib myRTC;                       // DS3231-RTC
 OneWire oneWire(ONE_WIRE_BUS);       // OneWireTemperatur 
 // Pass oneWire reference to DallasTemperature library
 DallasTemperature sensors(&oneWire); // OneWireTemperatur
-RTC_DATA_ATTR int bootCount = 0;    //DeepSleep
+RTC_DATA_ATTR int bootCount = 0;     // DeepSleep
+SPIClass spi;                        // SDLogging
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
@@ -290,35 +297,68 @@ void handleFileRead(void) {
 
 void setup() 
 {
-
   delay(1000);                  // ESP startup
   Serial.begin(115200);         // ESP Console
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   Serial.println();             // ESP Console
   SetupAutoConnect();           // Autoconnect
   if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true) // DS3231-RTC, ADXL234
-   { 
-    int sda = _CfgStorage.sdaio.substring(0,2).toInt();
-    int sdl = _CfgStorage.sdlio.substring(0,2).toInt();
-      Wire.begin(sda,sdl);
-      Serial.println("SDA/ SDL done " + _CfgStorage.sdaio + "/" + _CfgStorage.sdlio);
-   }            // DS3231-RTC, ADXL234
+   {                                                                             // DS3231-RTC, ADXL234
+    int sda = _CfgStorage.sdaio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234
+    int sdl = _CfgStorage.sdlio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234
+      Wire.begin(sda,sdl);                                                       // DS3231-RTC, ADXL234
+      Serial.println("SDA/ SDL done " + _CfgStorage.sdaio + "/" + _CfgStorage.sdlio); // DS3231-RTC, ADXL234
+   }                                                                            // DS3231-RTC, ADXL234  
   
   if(_CfgStorage.useVibrationSensor) { SetupVibration(); }             // Vibration
-  SetupCommunication();         // Communication
+  SetupCommunication();         // MQTT, SDLogging
   SetupPowerManagement();       // Power
   SetupHumadity();              // Humadity
   if(_CfgStorage.useSDLogging) { SetupLogging();   }
   if(_CfgStorage.useRTCSensor) { SetupRTC();       }              // RTC
-  if(_CfgStorage.useDeepSleep) { SetupDeepSleep(); }            // DeepSleep
+  if(_CfgStorage.useDeepSleep) { SetupDeepSleep(); }              // DeepSleep
   if(_CfgStorage.useTemperatureSensor) { SetupTemperature(); }    // Temperatur
 }
 
 ////////// Setup function
-void SetupLogging()
-{
-    
-}
+void SetupLogging()                                       // SDLogging
+{                                       // SDLogging
+  spi = SPIClass(VSPI);                                       // SDLogging
+  spi.begin(SCK, MISO, MOSI, CS);                                       // SDLogging
+
+  if (!SD.begin(CS,spi,80000000))                                        // SDLogging
+  {                                       // SDLogging
+    Serial.println("Card Mount Failed");                                       // SDLogging
+    _CfgStorage.useSDLogging = false;                                       // SDLogging
+  }                                       // SDLogging
+  else                                       // SDLogging
+  {                                       // SDLogging
+    uint8_t cardType = SD.cardType();                                       // SDLogging
+  
+    if(cardType == CARD_NONE){                                       // SDLogging
+      Serial.println("No SD card attached");                                       // SDLogging
+      return;                                       // SDLogging
+    }                                        // SDLogging
+  
+    Serial.print("SD Card Type: ");                                       // SDLogging
+    if(cardType == CARD_MMC){                                       // SDLogging
+      Serial.println("MMC");                                       // SDLogging
+    } else if(cardType == CARD_SD){                                       // SDLogging
+      Serial.println("SDSC");                                       // SDLogging
+    } else if(cardType == CARD_SDHC){                                       // SDLogging
+      Serial.println("SDHC");                                       // SDLogging
+    } else {                                       // SDLogging
+      Serial.println("UNKNOWN");                                       // SDLogging
+    }                                       // SDLogging
+  
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);                                       // SDLogging
+    Serial.printf("SD Card Size: %lluMB\n", cardSize);                                       // SDLogging
+  
+    listDir(SD, "/", 0);                                       // SDLogging
+    Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));                                       // SDLogging
+    Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));                                       // SDLogging
+  }                                       // SDLogging
+}                                       // SDLogging
 
 void SetupAutoConnect()
 {
@@ -328,10 +368,10 @@ void SetupAutoConnect()
   {                                                   // Autoconnect
     PageArgument  args;                               // Autoconnect
     AutoConnectAux& sensor_setting = *portal.aux(AUX_SENSOR_SETTING_URI);// Autoconnect
-    loadSensorParams(sensor_setting, args);                             // Autoconnect
-    portal.on(AUX_SENSOR_SETTING_URI, loadSensorParams);        // Autoconnect
-    portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);           // Autoconnect
-  }                                                             // Autoconnect
+    loadSensorParams(sensor_setting, args);                              // Autoconnect
+    portal.on(AUX_SENSOR_SETTING_URI, loadSensorParams);                 // Autoconnect
+    portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);                    // Autoconnect
+  }                                                                      // Autoconnect
   page1.close();                                      // Autoconnect
   SPIFFS.end();                                       // Autoconnect
 
@@ -361,6 +401,38 @@ void SetupAutoConnect()
   portal.config(config);                            // Autoconnect
   portal.begin();                                   // Autoconnect
 }
+
+void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
+  Serial.printf("Listing directory: %s\n", dirname);
+
+  File root = fs.open(dirname);
+  if(!root){
+    Serial.println("Failed to open directory");
+    return;
+  }
+  if(!root.isDirectory()){
+    Serial.println("Not a directory");
+    return;
+  }
+
+  File file = root.openNextFile();
+  while(file){
+    if(file.isDirectory()){
+      Serial.print("  DIR : ");
+      Serial.println(file.name());
+      if(levels){
+        listDir(fs, file.name(), levels -1);
+      }
+    } else {
+      Serial.print("  FILE: ");
+      Serial.print(file.name());
+      Serial.print("  SIZE: ");
+      Serial.println(file.size());
+    }
+    file = root.openNextFile();
+  }
+}
+
 
 void SetupVibration()                                                   //ADXL345
 {                                                                       //ADXL345
@@ -419,36 +491,36 @@ void SetupVibration()                                                   //ADXL34
               break;                                    //ADXL345
             case 40000:              //ADXL345
               accel.setDataRate(ADXL345_DATARATE_400_HZ);
-              Serial.print  ("400 ");                  //ADXL345 
+              Serial.print  ("400 ");                   //ADXL345 
               break;                                    //ADXL345
-            case 20000:                              //ADXL345
+            case 20000:                                 //ADXL345
               accel.setDataRate(ADXL345_DATARATE_200_HZ);
               Serial.print  ("200 ");                   //ADXL345 
               break;                                    //ADXL345
-            case 10000:                              //ADXL345
+            case 10000:                                 //ADXL345
               accel.setDataRate(ADXL345_DATARATE_100_HZ);
               Serial.print  ("100 ");                   //ADXL345 
               break;                                    //ADXL345
-            case 5000:                              //ADXL345
+            case 5000:                                  //ADXL345
               accel.setDataRate(ADXL345_DATARATE_50_HZ);
               Serial.print  ("50 ");                   //ADXL345 
               break;                                    //ADXL345
-            case 2500:                              //ADXL345
+            case 2500:                                  //ADXL345
               accel.setDataRate(ADXL345_DATARATE_25_HZ);
-              Serial.print  ("25 ");                   //ADXL345 
+              Serial.print  ("25 ");                    //ADXL345 
               break;                                    //ADXL345
-            case 1250:                              //ADXL345
+            case 1250:                                  //ADXL345
               accel.setDataRate(ADXL345_DATARATE_12_5_HZ);
-              Serial.print  ("12.5 ");                   //ADXL345 
+              Serial.print  ("12.5 ");                  //ADXL345 
               break;                                    //ADXL345
 
-            case 625:                              //ADXL345
+            case 625:                                   //ADXL345
               accel.setDataRate(ADXL345_DATARATE_6_25HZ);
-              Serial.print  ("6.25 ");                   //ADXL345 
+              Serial.print  ("6.25 ");                  //ADXL345 
               break;                                    //ADXL345
-            case 313:                              //ADXL345
+            case 313:                                   //ADXL345
               accel.setDataRate(ADXL345_DATARATE_3_13_HZ);
-              Serial.print  ("3.13 ");                   //ADXL345 
+              Serial.print  ("3.13 ");                  //ADXL345 
               break;                                    //ADXL345
             case 156:                              //ADXL345
               accel.setDataRate(ADXL345_DATARATE_1_56_HZ);
@@ -535,7 +607,7 @@ void SetupDeepSleep()                                                           
   First we configure the wake up source
   We set our ESP32 to wake up every 5 seconds
   */
-  esp_sleep_enable_timer_wakeup(_CfgStorage.deepSleepTime * uS_TO_S_FACTOR);                    //DeepSleep
+  esp_sleep_enable_timer_wakeup(_CfgStorage.deepSleepTime * uS_TO_S_FACTOR);        //DeepSleep
   Serial.println("Setup ESP32 to sleep for every " + String(_CfgStorage.deepSleepTime) +      
   " Seconds");                                                                      //DeepSleep
 
@@ -566,17 +638,17 @@ void SetupRTC()
 void loop() 
 {
   delay(_CfgStorage.mqtt_messagedelay.toInt());
-  HandleWebPage();              // Autoconnect
+  HandleWebPage();                                                    // Autoconnect
   if(!_CfgStorage.needToReboot)
   {
     if(_CfgStorage.useTemperatureSensor) { HandleTemperature(); }     //Temperatur
     HandleWeigth(); 
     if(_CfgStorage.useVibrationSensor && _CfgStorage.setupReadyVibration) { HandleVibration(); }  //ADXL345
-    { HandleCommunication();  } // MQTT
+    { HandleCommunication();  }                                       // MQTT, SDLogging
     HandlePowerManagement(); 
     HandleHumadity(); 
-    if(_CfgStorage.useRTCSensor) { HandleRTC();             }    //DS3231-RTC
-    if(_CfgStorage.useDeepSleep) { HandleDeepSleep();       }   //DeepSleep
+    if(_CfgStorage.useRTCSensor) { HandleRTC();             }         //DS3231-RTC
+    if(_CfgStorage.useDeepSleep) { HandleDeepSleep();       }         //DeepSleep
   }
   else
   {
@@ -586,19 +658,19 @@ void loop()
 
 ////////// Loop Functions 
 
-void HandleWebPage()
-{
+void HandleWebPage()             // Autoconnect
+{                                // Autoconnect
     portal.handleClient();       // Autoconnect
-}
-
-void HandleTemperature()
-{
+}                                // Autoconnect
+      
+void HandleTemperature()                                  //OneWireTemperature
+{                                                         //OneWireTemperature
   // Send the command to get temperatures
   sensors.requestTemperatures();                          //OneWireTemperature
-  _SensorValues.temperatur = sensors.getTempCByIndex(0);
+  _SensorValues.temperatur = sensors.getTempCByIndex(0);  //OneWireTemperature
   //print the temperature in Celsius
   Serial.print("Temperature: ");                          //OneWireTemperature
-  Serial.print(_SensorValues.temperatur);               //OneWireTemperature
+  Serial.print(_SensorValues.temperatur);                 //OneWireTemperature
   Serial.print((char)176);//shows degrees character       //OneWireTemperature
   Serial.print("C  |  ");                                 //OneWireTemperature
   
@@ -613,36 +685,59 @@ void HandleVibration()                                                   //ADXL3
   sensors_event_t event;                                                 //ADXL345
   accel.getEvent(&event);                                                //ADXL345
 
-  _SensorValues.vibration_x =event.acceleration.x;
-  _SensorValues.vibration_y =event.acceleration.y;
-  _SensorValues.vibration_z =event.acceleration.z;
+  _SensorValues.vibration_x =event.acceleration.x;                       //ADXL345
+  _SensorValues.vibration_y =event.acceleration.y;                       //ADXL345
+  _SensorValues.vibration_z =event.acceleration.z;                       //ADXL345
   
   /* Display the results (acceleration is measured in m/s^2) */
   Serial.print("X: "); Serial.print(_SensorValues.vibration_x); Serial.print("  ");                            //ADXL345
   Serial.print("Y: "); Serial.print(_SensorValues.vibration_y); Serial.print("  ");                            //ADXL345
   Serial.print("Z: "); Serial.print(_SensorValues.vibration_z); Serial.print("  ");Serial.println("m/s^2 ");   //ADXL345
-  delay(10);
+  delay(10);                                                                                                   //ADXL345
 }
 
-void HandleCommunication()
-{     
-  String message = CreateMessage();
-
-  if(_CfgStorage.useMQTT)
-  {
-    if(client.isConnected())
-    {
-      const char *mqtttopicChar = _CfgStorage.mqtt_topic.c_str();             // MQTT
+void HandleCommunication()                                                                      // MQTT, SDLOgging                                                   
+{                                                                                               // MQTT, SDLOgging
+  String message = CreateMessage();                                                             // MQTT, SDLOgging
+  const char *mqtttopicChar = _CfgStorage.mqtt_topic.c_str();                                   // MQTT, SDLOgging
+  if(_CfgStorage.useMQTT)                                                                       // MQTT,
+  {                                                                                             // MQTT,
+    if(client.isConnected())                                                                    // MQTT,
+    {                                                                                           // MQTT,
       // Subscribe to "mytopic/test" and display received message to Serial
       // client.subscribe("test/topic", [](const String & payload) { Serial.println(payload); });
     
-      // Publish a message to "mytopic/test"
-      client.publish(mqtttopicChar, message); // You can activate the retain flag by setting the third parameter to true
-    }
-    client.loop();
-  }
-}
+      // Publish a message                                       
+      client.publish(mqtttopicChar, message); // You can activate the retain flag by setting the third parameter to true   // MQTT,
+    }                                                                                             // MQTT,
+    client.loop();                                                                                // MQTT,
+  }                                                                                               // MQTT,
+  if(_CfgStorage.useSDLogging)                                                                    // SDLOgging
+  {                                                                                               // SDLOgging
+    message += "\n";                                                                              // SDLOgging
+    const char *SDsd_logfilepath = _CfgStorage.sd_logfilepath.c_str();                            // SDLOgging
+    const char *sdmessage = message.c_str();                                                      // SDLOgging
+    appendFile(SD, SDsd_logfilepath, sdmessage);                                                  // SDLOgging
+    Serial.printf("Appending to file: %s\n", _CfgStorage.sd_logfilepath);                         // SDLOgging
+  }                                                                                               // SDLOgging
+}                                                                                                 // MQTT, SDLOgging
 
+void appendFile(fs::FS &fs, const char * path, const char * message)                      // SDLOgging
+{                                                                                         // SDLOgging
+  Serial.printf("Appending to file: %s\n", path);                                         // SDLOgging
+  Serial.println(message);                                                                // SDLOgging
+  File file = fs.open(path, FILE_APPEND);                                                 // SDLOgging
+  if(!file){                                                                              // SDLOgging
+    Serial.println("Failed to open file for appe                                          // SDLOgging");
+    return;                                                                               // SDLOgging
+  }                                                                                       // SDLOgging
+  if(file.print(message)){                                                                // SDLOgging
+    Serial.println("Message appended");                                                   // SDLOgging
+  } else {                                                                                // SDLOgging
+    Serial.println("Append failed");                                                      // SDLOgging
+  }                                                                                       // SDLOgging
+  file.close();                                                                           // SDLOgging
+}                                                                                         // SDLOgging
 
 void HandleDeepSleep()
 {
@@ -849,22 +944,22 @@ void getSensorParams(AutoConnectAux& aux)
   _CfgStorage.mqttpassword = aux[F("mqttpassword")].value;                      // MQTT
   _CfgStorage.mqttpassword.trim();                                              // MQTT
   _CfgStorage.mqtt_topic = aux[F("mqtt_topic")].value;                          // MQTT
-  _CfgStorage.mqtt_topic.trim();   
-  _CfgStorage.mqtt_port = aux[F("mqtt_port")].value;                          // MQTT
-  _CfgStorage.mqtt_port.trim();   
-  _CfgStorage.mqtt_messagedelay = aux[F("mqtt_messagedelay")].value;                          // MQTT
-  _CfgStorage.mqtt_messagedelay.trim();  
-  
-  
+  _CfgStorage.mqtt_topic.trim();                                                // MQTT
+  _CfgStorage.mqtt_port = aux[F("mqtt_port")].value;                            // MQTT
+  _CfgStorage.mqtt_port.trim();                                                 // MQTT
+  _CfgStorage.mqtt_messagedelay = aux[F("mqtt_messagedelay")].value;            // MQTT
+  _CfgStorage.mqtt_messagedelay.trim();                                         // MQTT
+  _CfgStorage.sd_logfilepath = aux[F("sd_logfilepath")].value;                        // SDLogging
+  _CfgStorage.sd_logfilepath.trim();                                               // SDLOgging   
  
   _CfgStorage.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
   _CfgStorage.sdaio.trim();                                                     // ADXL, RTC
   
   _CfgStorage.sdlio = aux[F("sdlio")].value;                                    // Autoconnect
   _CfgStorage.sdlio.trim();                                                     // ADXL, RTC
-
-  Serial.println(" ");                                              // Autoconnect 
-  Serial.println("Curren Configuration:");                          // Autoconnect 
+  
+  Serial.println(" ");                                                          // Autoconnect 
+  Serial.println("Curren Configuration:");                                      // Autoconnect 
   Serial.print("Bee node name: ");                                  // Autoconnect 
   Serial.println(_CfgStorage.beenodename);                                      // Autoconnect 
   Serial.print("Hive name: ");                                      // Autoconnect 
@@ -921,6 +1016,8 @@ void getSensorParams(AutoConnectAux& aux)
   Serial.print("mqtt_messagedelay: ");                                     // MQTT 
   Serial.println(_CfgStorage.mqtt_messagedelay);                                       // MQTT
   
+  Serial.print("sd_logfilepath: ");                                     // SDLogging 
+  Serial.println(_CfgStorage.sd_logfilepath);                                       // SDLogging
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -964,7 +1061,7 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server", "mqtt_port" ,"mqtt_messagedelay"});     // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server", "mqtt_port" ,"mqtt_messagedelay" ,"sd_logfilepath"});     // Autoconnect
   param.close();                                                            // Autoconnect
   _CfgStorage.needToReboot = true;                                          // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -993,7 +1090,7 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT  
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT 
   aux[F("mqtt_messagedelay")].value = _CfgStorage.mqtt_messagedelay;           // MQTT 
-  
+  aux[F("sd_logfilepath")].value = _CfgStorage.sd_logfilepath;                 // SD Logging
 
-  return String();                                                                             // Autoconnect
-}                                                                                              // Autoconnect
+  return String();                                                             // Autoconnect
+}                                                                              // Autoconnect
