@@ -1,9 +1,9 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1073254/1966080  Bytes (54%) 
-                          Used memory for globale variabel 46084 Bytes (14%)
+                          Used programm memory 1075486/1966080  Bytes (54%) 
+                          Used memory for globale variabel 46124 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 281596 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 281556 Bytes (Max 327680 Bytes)
       
       Features:           (x) Webpage 
                           (x) Wifi Lifecycle
@@ -27,13 +27,13 @@
                           Adafruit 1.3.1 (+dependencies)
                           DS3231 (by Andrew Wickert; 1.0.1)
                           EspMQTTClient 1.13.3 (+dependencies)
+                          SPI/SD/FS default by Arduino
                           
       Scenario supported: (X) Always On with webserver
-                          ( ) Sleep on always power
+                          (X) Sleep on always power
                           ( ) Sleep on battery
-                          ( ) One time st
+                          ( ) One time st startup
                           
-                          artup
 */
 
 // ------------------------------ Includes ------------------------------------------
