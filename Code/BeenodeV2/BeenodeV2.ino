@@ -1,11 +1,11 @@
 /*    
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1073058/1966080  Bytes (54%) 
-                          Used memory for globale variabel 46068 Bytes (14%)
+                          Used programm memory 1073254/1966080  Bytes (54%) 
+                          Used memory for globale variabel 46084 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 281612 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 281596 Bytes (Max 327680 Bytes)
       
-      Feature:            (x) Webpage 
+      Features:           (x) Webpage 
                           (x) Wifi Lifecycle
                           (in progress) Configuration management (BeeSensors)
                           (x) Configuration management 
@@ -20,6 +20,14 @@
                           ( ) Lora Communication
                           ( ) SIM Communication
                           (in progress) SD Card
+
+      Libaries            Express if ESP32 Boards - ESP32 by Espressif Systems - (https://dl.espressif.com/dl/package_esp32_index.json) 1.0.6
+                          OneWire 2.3.6
+                          DallasTemperatur 3.9.0
+                          Autoconnect 1.3.4 (+ dependencies)
+                          Adafruit 1.3.1 (+dependencies)
+                          DS3231 (by Andrew Wickert; 1.0.1)
+                          EspMQTTClient 1.13.3 (+dependencies)
                           
       Scenario supported: (X) Always On with webserver
                           ( ) Sleep on always power
@@ -343,7 +351,7 @@ void SetupAutoConnect()
   // the link of the object tag, and the request can be caught by onNotFound handler.
   portal.onNotFound(handleFileRead);                // Autoconnect
   config.ota = AC_OTA_BUILTIN;                      // Autoconnect
-  config.title = _CfgStorage.beenodename + " 020420221625";     // Autoconnect
+  config.title = _CfgStorage.beenodename + " v2.04.13"; // Autoconnect
   config.homeUri = "/_ac";                          // Autoconnect
   config.bootUri = AC_ONBOOTURI_HOME;               // Autoconnect
   // Reconnect and continue publishing even if WiFi is disconnected.
