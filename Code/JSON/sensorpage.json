@@ -406,6 +406,12 @@
         "type": "ACText",
         "format": "Log file path: %s",
         "posterior": "br"
+      },
+      {
+        "name": "useWeigthSensor",
+        "type": "ACText",
+        "format": "Use weigth sensor (HX711): %s",
+        "posterior": "br"
       } 
     ]
   }

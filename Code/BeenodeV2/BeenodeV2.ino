@@ -10,7 +10,7 @@
                           (x) Configuration management 
                           (x) MQTT
                           (x) Vibration Sensor (ADXL345)
-                          ( ) Weight Sensor (HX711)
+                          (in progress) Weight Sensor (HX711)
                           (x) Temperature Sensor (DS)
                           ( ) Humadity Sensor ()
                           (x) RTC (DS3231)
@@ -51,6 +51,7 @@
 #include <OneWire.h>                // OneWireTemperatur
 #include <DallasTemperature.h>      // OneWireTemperatur
 #include "EspMQTTClient.h"          // MQTT
+#include <HX711_ADC.h>              // HDX711
 
 struct CfgStorage {
   String sdaio;                   // ADXL345, RTC
@@ -77,7 +78,8 @@ struct CfgStorage {
   bool useDeepSleep;              // DeepSleep
   bool useSDLogging;              // SDLogging
   String mqtt_messagedelay;       // MQTT
-  String sd_logfilepath;             // SDLogging
+  String sd_logfilepath;          // SDLogging
+  bool useWeigthSensor;           // HDX711
 };
 
 struct SensorValues 
@@ -90,7 +92,7 @@ struct SensorValues
   String senortime;       // RTC 
 };
 
-CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000", "/values.txt"};
+CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000", "/values.txt", false};
 SensorValues _SensorValues = {"", "", "", "", "", ""};
 
 String CreateMessage()
@@ -114,10 +116,13 @@ String CreateMessage()
   if(_CfgStorage.useTemperatureSensor)              // TOneWireTemperatur
   {                                                 // TOneWireTemperatur
     message += ";";                                 // TOneWireTemperatur
-    //message += "C1)";                             // TOneWireTemperatur
     message += _SensorValues.temperatur;            // TOneWireTemperatur
   }                                                 // TOneWireTemperatur
-  
+  if(_CfgStorage.useWeigthSensor)                   // HDX117
+  {                                                 // HDX117
+    message += ";";                                 // HDX117
+    message += _SensorValues.weigth;                // HDX117
+  }                                                 // HDX117
   return message;
 }
 
@@ -159,8 +164,13 @@ const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
 const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect      
+const int HX711_dout = 0;                                    // HX711 mcu > HX711 dout pin
+const int HX711_sck = 2;                                     // HX711 mcu > HX711 sck pin
 
 EspMQTTClient client;          // using the default constructor
+
+//HX711 constructor:
+HX711_ADC LoadCell(HX711_dout, HX711_sck);
 
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
@@ -318,43 +328,45 @@ void setup()
   if(_CfgStorage.useRTCSensor) { SetupRTC();       }              // RTC
   if(_CfgStorage.useDeepSleep) { SetupDeepSleep(); }              // DeepSleep
   if(_CfgStorage.useTemperatureSensor) { SetupTemperature(); }    // Temperatur
+  if(_CfgStorage.useWeigthSensor) { SetupWeigth(); }              // Weigth
+   
 }
 
 ////////// Setup function
-void SetupLogging()                                       // SDLogging
-{                                       // SDLogging
-  spi = SPIClass(VSPI);                                       // SDLogging
-  spi.begin(SCK, MISO, MOSI, CS);                                       // SDLogging
+void SetupLogging()                            // SDLogging
+{                                              // SDLogging
+  spi = SPIClass(VSPI);                        // SDLogging
+  spi.begin(SCK, MISO, MOSI, CS);              // SDLogging
 
-  if (!SD.begin(CS,spi,80000000))                                        // SDLogging
-  {                                       // SDLogging
-    Serial.println("Card Mount Failed");                                       // SDLogging
-    _CfgStorage.useSDLogging = false;                                       // SDLogging
-  }                                       // SDLogging
-  else                                       // SDLogging
-  {                                       // SDLogging
-    uint8_t cardType = SD.cardType();                                       // SDLogging
+  if (!SD.begin(CS,spi,80000000))              // SDLogging
+  {                                            // SDLogging
+    Serial.println("Card Mount Failed");       // SDLogging
+    _CfgStorage.useSDLogging = false;          // SDLogging
+  }                                            // SDLogging
+  else                                         // SDLogging
+  {                                            // SDLogging
+    uint8_t cardType = SD.cardType();          // SDLogging
   
-    if(cardType == CARD_NONE){                                       // SDLogging
-      Serial.println("No SD card attached");                                       // SDLogging
-      return;                                       // SDLogging
-    }                                        // SDLogging
+    if(cardType == CARD_NONE){                 // SDLogging
+      Serial.println("No SD card attached");   // SDLogging
+      return;                                  // SDLogging
+    }                                          // SDLogging
   
-    Serial.print("SD Card Type: ");                                       // SDLogging
-    if(cardType == CARD_MMC){                                       // SDLogging
-      Serial.println("MMC");                                       // SDLogging
-    } else if(cardType == CARD_SD){                                       // SDLogging
-      Serial.println("SDSC");                                       // SDLogging
-    } else if(cardType == CARD_SDHC){                                       // SDLogging
-      Serial.println("SDHC");                                       // SDLogging
-    } else {                                       // SDLogging
-      Serial.println("UNKNOWN");                                       // SDLogging
-    }                                       // SDLogging
+    Serial.print("SD Card Type: ");            // SDLogging
+    if(cardType == CARD_MMC){                  // SDLogging
+      Serial.println("MMC");                   // SDLogging
+    } else if(cardType == CARD_SD){            // SDLogging
+      Serial.println("SDSC");                  // SDLogging
+    } else if(cardType == CARD_SDHC){          // SDLogging
+      Serial.println("SDHC");                  // SDLogging
+    } else {                                   // SDLogging
+      Serial.println("UNKNOWN");               // SDLogging
+    }                                          // SDLogging
   
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);                                       // SDLogging
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);                                       // SDLogging
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024); // SDLogging
+    Serial.printf("SD Card Size: %lluMB\n", cardSize); // SDLogging
   
-    listDir(SD, "/", 0);                                       // SDLogging
+    listDir(SD, "/", 0);                               // SDLogging
     Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));                                       // SDLogging
     Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));                                       // SDLogging
   }                                       // SDLogging
@@ -475,89 +487,89 @@ void SetupVibration()                                                   //ADXL34
       //  accel.setFullRes(acc_usefullres);
       //  Serial.print("Full resolution");Serial.println(acc_usefullres);
           int sel = _CfgStorage.acc_datarate*100;
-          switch(sel)                   //ADXL345
-          {                                             //ADXL345
-            case 320000:              //ADXL345
+          switch(sel)                                   // ADXL345
+          {                                             // ADXL345
+            case 320000:                                // ADXL345
               accel.setDataRate(ADXL345_DATARATE_3200_HZ);
-              Serial.print  ("3200 ");                  //ADXL345 
-              break;                                    //ADXL345
+              Serial.print  ("3200 ");                  // ADXL345 
+              break;                                    // ADXL345
             case 160000:              //ADXL345
               accel.setDataRate(ADXL345_DATARATE_1600_HZ);
-              Serial.print  ("1600 ");                  //ADXL345 
-              break;                                    //ADXL345
+              Serial.print  ("1600 ");                  // ADXL345 
+              break;                                    // ADXL345
             case 80000:              //ADXL345
               accel.setDataRate(ADXL345_DATARATE_800_HZ);
-              Serial.print  ("800 ");                  //ADXL345 
-              break;                                    //ADXL345
+              Serial.print  ("800 ");                   // ADXL345 
+              break;                                    // ADXL345
             case 40000:              //ADXL345
               accel.setDataRate(ADXL345_DATARATE_400_HZ);
-              Serial.print  ("400 ");                   //ADXL345 
-              break;                                    //ADXL345
-            case 20000:                                 //ADXL345
+              Serial.print  ("400 ");                   // ADXL345 
+              break;                                    // ADXL345
+            case 20000:                                 // ADXL345
               accel.setDataRate(ADXL345_DATARATE_200_HZ);
-              Serial.print  ("200 ");                   //ADXL345 
-              break;                                    //ADXL345
-            case 10000:                                 //ADXL345
+              Serial.print  ("200 ");                   // ADXL345 
+              break;                                    // ADXL345
+            case 10000:                                 // ADXL345
               accel.setDataRate(ADXL345_DATARATE_100_HZ);
-              Serial.print  ("100 ");                   //ADXL345 
-              break;                                    //ADXL345
-            case 5000:                                  //ADXL345
+              Serial.print  ("100 ");                   // ADXL345 
+              break;                                    // ADXL345
+            case 5000:                                  // ADXL345
               accel.setDataRate(ADXL345_DATARATE_50_HZ);
-              Serial.print  ("50 ");                   //ADXL345 
-              break;                                    //ADXL345
-            case 2500:                                  //ADXL345
+              Serial.print  ("50 ");                    // ADXL345 
+              break;                                    // ADXL345
+            case 2500:                                  // ADXL345
               accel.setDataRate(ADXL345_DATARATE_25_HZ);
-              Serial.print  ("25 ");                    //ADXL345 
-              break;                                    //ADXL345
-            case 1250:                                  //ADXL345
+              Serial.print  ("25 ");                    // ADXL345 
+              break;                                    // ADXL345
+            case 1250:                                  // ADXL345
               accel.setDataRate(ADXL345_DATARATE_12_5_HZ);
-              Serial.print  ("12.5 ");                  //ADXL345 
-              break;                                    //ADXL345
+              Serial.print  ("12.5 ");                  // ADXL345 
+              break;                                    // ADXL345
 
-            case 625:                                   //ADXL345
+            case 625:                                   // ADXL345
               accel.setDataRate(ADXL345_DATARATE_6_25HZ);
-              Serial.print  ("6.25 ");                  //ADXL345 
-              break;                                    //ADXL345
-            case 313:                                   //ADXL345
+              Serial.print  ("6.25 ");                  // ADXL345 
+              break;                                    // ADXL345
+            case 313:                                   // ADXL345
               accel.setDataRate(ADXL345_DATARATE_3_13_HZ);
-              Serial.print  ("3.13 ");                  //ADXL345 
-              break;                                    //ADXL345
-            case 156:                              //ADXL345
+              Serial.print  ("3.13 ");                  // ADXL345 
+              break;                                    // ADXL345
+            case 156:                                   // ADXL345
               accel.setDataRate(ADXL345_DATARATE_1_56_HZ);
-              Serial.print  ("1.56 ");                   //ADXL345 
-              break;                                    //ADXL345
-            case 78:                              //ADXL345
+              Serial.print  ("1.56 ");                  // ADXL345 
+              break;                                    // ADXL345
+            case 78:                                    // ADXL345
               accel.setDataRate(ADXL345_DATARATE_0_78_HZ);
-              Serial.print  ("0.78 ");                   //ADXL345 
-              break;                                    //ADXL345
+              Serial.print  ("0.78 ");                  // ADXL345 
+              break;                                    // ADXL345
 
             case 39:                              //ADXL345
               accel.setDataRate(ADXL345_DATARATE_0_39_HZ);
-              Serial.print  ("0.39 ");                   //ADXL345 
-              break;                                    //ADXL345
-            case 20:                              //ADXL345
+              Serial.print  ("0.39 ");                  // ADXL345 
+              break;                                    // ADXL345
+            case 20:                                    // ADXL345
               accel.setDataRate(ADXL345_DATARATE_0_20_HZ);
-              Serial.print  ("0.20 ");                   //ADXL345 
-              break;                                    //ADXL345
-            case 10:                              //ADXL345
+              Serial.print  ("0.20 ");                  // ADXL345 
+              break;                                    // ADXL345
+            case 10:                                    // ADXL345
               accel.setDataRate(ADXL345_DATARATE_0_10_HZ);
-              Serial.print  ("0.10 ");                   //ADXL345 
-              break;                                    //ADXL345
-            default:                                    //ADXL345
+              Serial.print  ("0.10 ");                  // ADXL345 
+              break;                                    // ADXL345
+            default:                                    // ADXL345
               accel.setDataRate(ADXL345_DATARATE_3200_HZ);
-              Serial.print  ("???? set to 3200 ");      //ADXL345
-              break;                                    //ADXL345
+              Serial.print  ("???? set to 3200 ");      // ADXL345
+              break;                                    // ADXL345
             
         }        
         
         /* Display some basic information on this sensor */
-        displaySensorDetails();                                          //ADXL345
+        displaySensorDetails();                                          // ADXL345
         
         /* Display additional settings (outside the scope of sensor_t) */
-        displayDataRate();                                               //ADXL345
-        displayRange();                                                  //ADXL345
-        Serial.println("");                                              //ADXL345
-        _CfgStorage.setupReadyVibration = true;
+        displayDataRate();                                               // ADXL345
+        displayRange();                                                  // ADXL345
+        Serial.println("");                                              // ADXL345
+        _CfgStorage.setupReadyVibration = true;                          // ADXL345
     }
 }
 
@@ -566,8 +578,25 @@ void SetupTemperature()
     sensors.begin();                                                   // OneWireTemperatur  
 }
 
-void SetupWeigth()
-{}
+void SetupWeigth()                                                  // HX711
+{                                                                   // HX711
+  LoadCell.begin();                                                 // HX711
+  //LoadCell.setReverseOutput(); //uncomment to turn a negative output value to positive
+  unsigned long stabilizingtime = 2000; // preciscion right after power-up can be improved by adding a few seconds of stabilizing time
+  boolean _tare = false; //set this to false if you don't want tare to be performed in the next step
+  LoadCell.start(stabilizingtime, _tare);                           // HX711
+  if (LoadCell.getTareTimeoutFlag() || LoadCell.getSignalTimeoutFlag()) // HX711
+  {                                                                 // HX711
+    Serial.println("Timeout, check MCU>HX711 wiring and pin designations"); // HX711
+    _CfgStorage.useWeigthSensor = false;                            // HX711
+  }                                                                 // HX711
+  else                                                              // HX711
+  {                                                                 // HX711
+    LoadCell.setCalFactor(1.0); // user set calibration value (float), initial value 1.0 may be used for this sketch  // HX711
+    Serial.println("Startup is complete");                          // HX711
+  }                                                                 // HX711
+  if (_CfgStorage.useWeigthSensor == true) { while (!LoadCell.update());} // HX711
+}                                                                   // HX711
 
 void SetupCommunication()
 {
@@ -641,8 +670,8 @@ void loop()
   HandleWebPage();                                                    // Autoconnect
   if(!_CfgStorage.needToReboot)
   {
-    if(_CfgStorage.useTemperatureSensor) { HandleTemperature(); }     //Temperatur
-    HandleWeigth(); 
+    if(_CfgStorage.useTemperatureSensor) { HandleTemperature(); }     // Temperatur
+    if(_CfgStorage.useWeigthSensor) { HandleWeigth(); }     // HX711
     if(_CfgStorage.useVibrationSensor && _CfgStorage.setupReadyVibration) { HandleVibration(); }  //ADXL345
     { HandleCommunication();  }                                       // MQTT, SDLogging
     HandlePowerManagement(); 
@@ -676,8 +705,29 @@ void HandleTemperature()                                  //OneWireTemperature
   
 }
 
-void HandleWeigth()
-{}
+unsigned long t = 0;                             // HX711
+void HandleWeigth()                              // HX711
+{                                                // HX711
+  static boolean newDataReady = 0;               // HX711
+  const int serialPrintInterval = 0; //increase value to slow down serial print activity                              // HX711
+  
+  // check for new data/start next conversion:  
+  if (LoadCell.update()) newDataReady = true;    // HX711
+
+  // get smoothed value from the dataset:
+  if (newDataReady)                              // HX711
+  {                                              // HX711
+    if (millis() > t + serialPrintInterval)      // HX711
+    {                                            // HX711
+      float i = LoadCell.getData();              // HX711
+      Serial.print("Load_cell output val: ");    // HX711
+      Serial.println(i);                         // HX711
+      newDataReady = 0;                          // HX711
+      _SensorValues.weigth = i;                  // HX711
+      t = millis();                              // HX711
+    }                                            // HX711
+  }                                              // HX711
+}                                                // HX711
 
 void HandleVibration()                                                   //ADXL345
 {
@@ -728,7 +778,7 @@ void appendFile(fs::FS &fs, const char * path, const char * message)            
   Serial.println(message);                                                                // SDLOgging
   File file = fs.open(path, FILE_APPEND);                                                 // SDLOgging
   if(!file){                                                                              // SDLOgging
-    Serial.println("Failed to open file for appe                                          // SDLOgging");
+    Serial.println("Failed to open file for append");                                     // SDLOgging
     return;                                                                               // SDLOgging
   }                                                                                       // SDLOgging
   if(file.print(message)){                                                                // SDLOgging
@@ -778,7 +828,7 @@ void HandleRTC()
     snprintf(buf,sizeof(buf),"%02d.%02d.%4d/%02d:%02d:%02d", now.day(), now.month(), now.year(), now.hour(), now.minute(), now.second());
     _SensorValues.senortime = buf;
 
-    Serial.println(buf);                               //DS3231-RTC
+    Serial.println(buf);                              //DS3231-RTC
     
     Serial.print(" since midnight 1/1/1970 = ");      //DS3231-RTC
     Serial.print(now.unixtime());                     //DS3231-RTC
@@ -949,40 +999,40 @@ void getSensorParams(AutoConnectAux& aux)
   _CfgStorage.mqtt_port.trim();                                                 // MQTT
   _CfgStorage.mqtt_messagedelay = aux[F("mqtt_messagedelay")].value;            // MQTT
   _CfgStorage.mqtt_messagedelay.trim();                                         // MQTT
-  _CfgStorage.sd_logfilepath = aux[F("sd_logfilepath")].value;                        // SDLogging
-  _CfgStorage.sd_logfilepath.trim();                                               // SDLOgging   
- 
+  _CfgStorage.sd_logfilepath = aux[F("sd_logfilepath")].value;                  // SDLogging
+  _CfgStorage.sd_logfilepath.trim();                                            // SDLOgging   
+  _CfgStorage.useWeigthSensor = aux[F("useWeigthSensor")].as<AutoConnectCheckbox>().checked;       // HDX711  
   _CfgStorage.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
   _CfgStorage.sdaio.trim();                                                     // ADXL, RTC
   
   _CfgStorage.sdlio = aux[F("sdlio")].value;                                    // Autoconnect
   _CfgStorage.sdlio.trim();                                                     // ADXL, RTC
   
-  Serial.println(" ");                                                          // Autoconnect 
-  Serial.println("Curren Configuration:");                                      // Autoconnect 
+  Serial.println(" ");                                              // Autoconnect 
+  Serial.println("Curren Configuration:");                          // Autoconnect 
   Serial.print("Bee node name: ");                                  // Autoconnect 
-  Serial.println(_CfgStorage.beenodename);                                      // Autoconnect 
+  Serial.println(_CfgStorage.beenodename);                          // Autoconnect 
   Serial.print("Hive name: ");                                      // Autoconnect 
-  Serial.println(_CfgStorage.hivename);                                         // Autoconnect 
+  Serial.println(_CfgStorage.hivename);                             // Autoconnect 
   Serial.print("Used deep sleep: ");                                // Autoconnect 
-  Serial.println(_CfgStorage.useDeepSleep);                                     // Autoconnect 
+  Serial.println(_CfgStorage.useDeepSleep);                         // Autoconnect 
   Serial.print("Deep sleep time: ");                                // Autoconnect 
-  Serial.println(_CfgStorage.deepSleepTime);                                    // Autoconnect 
+  Serial.println(_CfgStorage.deepSleepTime);                        // Autoconnect 
   Serial.print("Use temperature sensor: ");                         // Autoconnect 
-  Serial.println(_CfgStorage.useTemperatureSensor);                             // Autoconnect 
+  Serial.println(_CfgStorage.useTemperatureSensor);                 // Autoconnect 
   Serial.print("Use vibration sensor: ");                           // Autoconnect 
-  Serial.println(_CfgStorage.useVibrationSensor);                               // Autoconnect 
+  Serial.println(_CfgStorage.useVibrationSensor);                   // Autoconnect 
   Serial.print("Use RTC sensor: ");                                 // Autoconnect 
-  Serial.println(_CfgStorage.useRTCSensor);                                     // Autoconnect 
+  Serial.println(_CfgStorage.useRTCSensor);                         // Autoconnect 
 
   Serial.print("acc_datarate: ");                                   // Autoconnect 
-  Serial.println(_CfgStorage.acc_datarate);                                     // Autoconnect 
+  Serial.println(_CfgStorage.acc_datarate);                         // Autoconnect 
 
   Serial.print("acc_usefullres: ");                                 // Autoconnect 
-  Serial.println(_CfgStorage.acc_usefullres);                                   // Autoconnect 
+  Serial.println(_CfgStorage.acc_usefullres);                       // Autoconnect 
 
   Serial.print("acc_range: ");                                      // Autoconnect 
-  Serial.println(_CfgStorage.acc_range);                                        // Autoconnect 
+  Serial.println(_CfgStorage.acc_range);                            // Autoconnect 
 
   Serial.print("sdaio: ");                                          // ADXL345, RTC  
   Serial.println(_CfgStorage.sdaio);                                // ADXL345, RTC 
@@ -990,34 +1040,37 @@ void getSensorParams(AutoConnectAux& aux)
   Serial.println(_CfgStorage.sdlio);                                // ADXL345, RTC 
 
   Serial.print("useMQTT: ");                                        // MQTT 
-  Serial.println(_CfgStorage.useMQTT);                                          // MQTT
+  Serial.println(_CfgStorage.useMQTT);                              // MQTT
 
   Serial.print("mqtt_SSID: ");                                      // MQTT 
-  Serial.println(_CfgStorage.mqtt_SSID);                                        // MQTT
+  Serial.println(_CfgStorage.mqtt_SSID);                            // MQTT
 
   Serial.print("mqtt_wifi_pwd: ");                                  // MQTT 
-  Serial.println(_CfgStorage.mqtt_wifi_pwd);                                    // MQTT
+  Serial.println(_CfgStorage.mqtt_wifi_pwd);                        // MQTT
 
   Serial.print("mqttusername: ");                                   // MQTT 
-  Serial.println(_CfgStorage.mqttusername);                                     // MQTT
+  Serial.println(_CfgStorage.mqttusername);                         // MQTT
 
   Serial.print("mqttpassword: ");                                   // MQTT 
-  Serial.println(_CfgStorage.mqttpassword);                                     // MQTT
+  Serial.println(_CfgStorage.mqttpassword);                         // MQTT
     
   Serial.print("mqtt_topic: ");                                     // MQTT 
-  Serial.println(_CfgStorage.mqtt_topic);                                       // MQTT
+  Serial.println(_CfgStorage.mqtt_topic);                           // MQTT
 
-  Serial.print("mqtt_server: ");                                     // MQTT 
-  Serial.println(_CfgStorage.mqtt_server);                                       // MQTT
+  Serial.print("mqtt_server: ");                                    // MQTT 
+  Serial.println(_CfgStorage.mqtt_server);                          // MQTT
 
-  Serial.print("mqtt_server: ");                                     // MQTT 
-  Serial.println(_CfgStorage.mqtt_port);                                       // MQTT
+  Serial.print("mqtt_server: ");                                    // MQTT 
+  Serial.println(_CfgStorage.mqtt_port);                            // MQTT
 
-  Serial.print("mqtt_messagedelay: ");                                     // MQTT 
-  Serial.println(_CfgStorage.mqtt_messagedelay);                                       // MQTT
+  Serial.print("mqtt_messagedelay: ");                              // MQTT 
+  Serial.println(_CfgStorage.mqtt_messagedelay);                    // MQTT
   
-  Serial.print("sd_logfilepath: ");                                     // SDLogging 
-  Serial.println(_CfgStorage.sd_logfilepath);                                       // SDLogging
+  Serial.print("sd_logfilepath: ");                                 // SDLogging 
+  Serial.println(_CfgStorage.sd_logfilepath);                       // SDLogging
+
+  Serial.print("useWeigthSensor: ");                                // HDX711 
+  Serial.println(_CfgStorage.useWeigthSensor);                      // HDX711
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -1025,7 +1078,7 @@ void getSensorParams(AutoConnectAux& aux)
 
 // Load parameters saved with saveParams from SPIFFS into the
 // elements defined in /sensor_setting JSON.
-String loadSensorParams(AutoConnectAux& aux, PageArgument& args)    // Autoconnect
+String loadSensorParams(AutoConnectAux& aux, PageArgument& args)      // Autoconnect
 {                                                                     // Autoconnect
   (void)(args);                                                       // Autoconnect
   Serial.print(PARAM_SENSOR_FILE);                                    // Autoconnect
@@ -1061,7 +1114,7 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server", "mqtt_port" ,"mqtt_messagedelay" ,"sd_logfilepath"});     // Autoconnect
+  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor",  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic","mqtt_server", "mqtt_port", "useWeigthSensor" ,"mqtt_messagedelay" ,"sd_logfilepath"});     // Autoconnect
   param.close();                                                            // Autoconnect
   _CfgStorage.needToReboot = true;                                          // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -1091,6 +1144,7 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT 
   aux[F("mqtt_messagedelay")].value = _CfgStorage.mqtt_messagedelay;           // MQTT 
   aux[F("sd_logfilepath")].value = _CfgStorage.sd_logfilepath;                 // SD Logging
+  aux[F("useWeigthSensor")].value = _CfgStorage.useWeigthSensor;               // HDX711
 
   return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
