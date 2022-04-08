@@ -136,6 +136,13 @@
         "checked": false
       },
       {
+        "name": "useTempSensorTwo",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use temperatur sensor 2 (BME280)",
+        "checked": false
+      },    
+      {
         "name": "newline5",
         "type": "ACElement",
         "value": "<hr>"
@@ -233,13 +240,21 @@
         "name": "sd_logfilepath",
         "type": "ACInput",
         "label": "Log file path",
-        "placeholder": "i.e. /values.txt"
+        "placeholder": "i.e. /value.txt"
       },
       {
         "name": "newline13",
         "type": "ACElement",
         "value": "<hr>"
-      },      {
+      }, 
+      {
+        "name": "useHumidity",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use humidity sensor 2 (BME280)",
+        "checked": false
+      },    
+      {
         "name": "newline14",
         "type": "ACElement",
         "value": "<hr>"
@@ -262,7 +277,8 @@
     "title": "SENSOR Setting",
     "uri": "/sensor_save",
     "menu": false,
-    "element": [
+    "element": 
+    [
       {
         "name": "caption",
         "type": "ACText",
@@ -411,6 +427,18 @@
         "name": "useWeigthSensor",
         "type": "ACText",
         "format": "Use weigth sensor (HX711): %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useTempSensorTwo",
+        "type": "ACText",
+        "format": "Use tempsensor 2 (BME280): %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useHumidity",
+        "type": "ACText",
+        "format": "Use himitidy sensor (BME280): %s",
         "posterior": "br"
       } 
     ]
