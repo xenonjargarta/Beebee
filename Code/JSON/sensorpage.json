@@ -23,23 +23,7 @@
         "style": "font-family:serif;color:#4682b4;"
       },
       {
-        "name": "beenodename",
-        "type": "ACInput",
-        "label": "Bee Node Name",
-        "placeholder": "Bee Node XXX"
-      },
-      {
-        "name": "hivename",
-        "type": "ACInput",
-        "label": "Hive Name"
-      },
-      {
         "name": "newline",
-        "type": "ACElement",
-        "value": "<hr>"
-      },
-	    {
-        "name": "newline1",
         "type": "ACElement",
         "value": "<hr>"
       },

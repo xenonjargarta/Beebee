@@ -1,0 +1,239 @@
+[
+  {
+    "title": "Device Settings",
+    "uri": "/device_settings",
+    "menu": true,
+    "element": 
+    [
+      {
+        "name": "style",
+        "type": "ACStyle",
+        "value": "label+input,label+select{position:sticky;left:120px;width:230px!important;box-sizing:border-box;}"
+      },
+      {
+        "name": "header",
+        "type": "ACText",
+        "value": "<h2>Basic Bee Node Configuration</h2>",
+        "style": "text-align:center;color:#2f4f4f;padding:10px;"
+      },
+      {
+        "name": "caption",
+        "type": "ACText",
+        "value": "Setup for basic device properties",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "save",
+        "type": "ACSubmit",
+        "value": "Save",
+        "uri": "/sensor_save"
+      },
+      {
+        "name": "discard",
+        "type": "ACSubmit",
+        "value": "Discard",
+        "uri": "/_ac"
+      },
+      {
+        "name": "newline1",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption1",
+        "type": "ACText",
+        "value": "Set name & ID for bee node sensor",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "beenodename",
+        "type": "ACInput",
+        "label": "Bee Node Name",
+        "placeholder": "Bee Node XXX"
+      },
+      {
+        "name": "hiveid",
+        "type": "ACInput",
+        "label": "Hive ID",
+        "placeholder": "001"
+      },
+      {
+        "name": "newline2",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption3",
+        "type": "ACText",
+        "value": "Setup deep sleep mode",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+	  	{
+        "name": "useDeepSleep",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use Deep Sleep",
+        "checked": false
+      },
+      {
+        "name": "deepSleepTime",
+        "type": "ACInput",
+        "label": "Time (Sec)",
+        "pattern": "^[0-9]$"
+      },
+      {
+        "name": "newline3",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption4",
+        "type": "ACText",
+        "value": "Setup IO ports",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "sdaio",
+        "type": "ACInput",
+        "label": "SDA IO PIN"
+      },
+      {
+        "name": "sdlio",
+        "type": "ACInput",
+        "label": "SDL IO PIN"
+      },
+      {
+        "name": "onewirebus",
+        "type": "ACInput",
+        "label": "OneWireBus PIN"
+      },
+      {
+        "name": "miso",
+        "type": "ACInput",
+        "label": "MISO PIN"
+      },
+      {
+        "name": "mosi",
+        "type": "ACInput",
+        "label": "MOSI PIN"
+      },
+      {
+        "name": "mosi",
+        "type": "ACInput",
+        "label": "MOSI PIN"
+      },
+      {
+        "name": "cs",
+        "type": "ACInput",
+        "label": "CS PIN"
+      },
+      {
+        "name": "clk",
+        "type": "ACInput",
+        "label": "CLK PIN"
+      },
+      {
+        "name": "Ppoweroff",
+        "type": "ACInput",
+        "label": "PowerOff PIN"
+      },
+      {
+        "name": "newline4",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption5",
+        "type": "ACText",
+        "value": "Basic operations",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "reset",
+        "type": "ACSubmit",
+        "value": "Reset",
+        "uri": "/_ac#rdlg"
+      },
+      {
+        "name": "upload",
+        "type": "ACSubmit",
+        "value": "UPLOAD",
+        "uri": "/upload"
+      },
+      {
+        "name": "update",
+        "type": "ACSubmit",
+        "value": "Firmware update",
+        "uri": "/_ac/update"
+      },
+      {
+        "name": "disconnect",
+        "type": "ACSubmit",
+        "value": "Wifi disconnect",
+        "uri": "/_ac/disc"
+      },
+      {
+        "name": "newAP",
+        "type": "ACSubmit",
+        "value": "Configure new AP",
+        "uri": "/_ac/config"
+      },
+      {
+        "name": "openssid",
+        "type": "ACSubmit",
+        "value": "Open SSID",
+        "uri": "/_ac/open"
+      }
+    ]
+  },
+  {
+    "title": "Device Settings",
+    "uri": "/device_save",
+    "menu": false,
+    "element": 
+    [
+      {
+        "name": "caption",
+        "type": "ACText",
+        "value": "<h4>You need to reboot the device. Parameters saved as:</h4>",
+        "style": "text-align:center;color:#2f4f4f;padding:10px;"
+      },
+      {
+        "name": "beenodename",
+        "type": "ACText",
+        "format": "Server: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "hivename",
+        "type": "ACText",
+        "format": "Channel ID: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "useDeepSleep",
+        "type": "ACText",
+        "format": "Use deep sleep: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "deepSleepTime",
+        "type": "ACText",
+        "format": "Deep sleep time: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "sdaio",
+        "type": "ACText",
+        "format": "SDA: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "sdlio",
+        "type": "ACText",
+        "format": "SDL: %s",
+        "posterior": "br"
+      } 
+    ]
+  }
+]

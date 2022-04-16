@@ -178,7 +178,7 @@ DallasTemperature sensors(&oneWire); // OneWireTemperatur
 RTC_DATA_ATTR int bootCount = 0;     // DeepSleep
 SPIClass spi;                        // SDLogging
 Adafruit_BME280 bme; // I2C          // BME280
-unsigned bmestatus;                     // BME280
+unsigned bmestatus;                  // BME280
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
@@ -186,6 +186,10 @@ Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
 const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
+const char* AUX_DEVICE_SETTING_URI  = "/device_setting";     // Autoconnect
+const char* AUX_DEVICE_SAVE_URI     = "/device_save";        // Autoconnect
+const char* AUX_MESSAGE_SETTING_URI  = "/message_settings";  // Autoconnect
+const char* AUX_MESSAGE_SAVE_URI     = "/message_save";      // Autoconnect
 const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect
 const int HX711_dout = 0;                                    // HX711 mcu > HX711 dout pin
 const int HX711_sck = 2;                                     // HX711 mcu > HX711 sck pin
@@ -447,6 +451,21 @@ void SetupLogging()                            // SDLogging
 void SetupAutoConnect()
 {
   SPIFFS.begin();                                     // Autoconnect
+  File devicepage = SPIFFS.open("/devicepage.json", "r");  // Autoconnect
+  if(portal.load(devicepage))                              // Autoconnect
+  {                                                   // Autoconnect
+    PageArgument  args;                               // Autoconnect
+    AutoConnectAux& device_setting = *portal.aux(AUX_DEVICE_SETTING_URI);// Autoconnect
+    loadDeviceParams(device_setting, args);                              // Autoconnect
+    portal.on(AUX_DEVICE_SETTING_URI, loadDeviceParams);                 // Autoconnect
+  }
+  else
+  {
+    Serial.println("Unable to load devicepage.json. Load now default device managemnt page");// Autoconnect
+    auxDev.load(PAGE_DEVICE);      // Autoconnect
+  }
+  devicepage.close();                                 // Autoconnect
+ 
   File page1 = SPIFFS.open("/sensorpage.json", "r");  // Autoconnect
   if(portal.load(page1))                              // Autoconnect
   {                                                   // Autoconnect
@@ -465,9 +484,9 @@ void SetupAutoConnect()
   // Attach the custom web pages
   auxUpload.load(PAGE_UPLOAD);   // Autoconnect
   auxBrowse.load(PAGE_BROWSE);   // Autoconnect
-  auxDev.load(PAGE_DEVICE);        // Autoconnect
+  
   auxBrowse.on(postUpload);      // Autoconnect
-  portal.join({ auxUpload, auxBrowse, auxDev});  // Autoconnect
+  portal.join({auxUpload, auxBrowse, auxDev});  // Autoconnect
 
   // The handleFileRead callback function provides an echo back of the
   // uploaded file to the client. You can include the uploaded file in
@@ -1263,18 +1282,12 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   Serial.println("Need to reboot device");                                  // Autoconnect
 
   // Echo back saved parameters to AutoConnectAux page.
-  aux[F("beenodename")].value = _CfgStorage.beenodename;                       // Autoconnect
-  aux[F("hivename")].value = _CfgStorage.hivename;                             // Autoconnect
-  aux[F("deepSleepTime")].value = _CfgStorage.deepSleepTime;                   // Autoconnect
-  aux[F("useDeepSleep")].value = _CfgStorage.useDeepSleep;                     // Autoconnect
   aux[F("useTemperatureSensor")].value = _CfgStorage.useTemperatureSensor;     // Autoconnect
   aux[F("useVibrationSensor")].value = _CfgStorage.useVibrationSensor;         // Autoconnect
   aux[F("useRTCSensor")].value = _CfgStorage.useRTCSensor;                     // Autoconnect
   aux[F("acc_datarate")].value = _CfgStorage.acc_datarate;                     // Autoconnect
   aux[F("acc_range")].value = _CfgStorage.acc_range;                           // Autoconnect
   aux[F("acc_usefullres")].value = _CfgStorage.acc_usefullres;                 // Autoconnect
-  aux[F("sdaio")].value = _CfgStorage.sdaio;                                   // AXDL345, RTC
-  aux[F("sdlio")].value = _CfgStorage.sdlio;                                   // AXDL345, RTC
   aux[F("useSDLogging")].value = _CfgStorage.useSDLogging;                     // MQTT
   aux[F("useMQTT")].value = _CfgStorage.useMQTT;                               // MQTT
   aux[F("mqtt_topic")].value = _CfgStorage.mqtt_topic;                         // MQTT
@@ -1290,5 +1303,56 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("useTempSensorTwo")].value = _CfgStorage.useTempSensorTwo;             // BME280
   aux[F("useHumidity")].value = _CfgStorage.useHumidity;                       // BME280
 
+  return String();                                                             // Autoconnect
+}                                                                              // Autoconnect
+
+// Load parameters saved with saveParams from SPIFFS into the
+// elements defined in /device_settings JSON.
+String loadDeviceParams(AutoConnectAux& aux, PageArgument& args)      // Autoconnect
+{                                                                     // Autoconnect
+  (void)(args);                                                       // Autoconnect
+  Serial.print(PARAM_SENSOR_FILE);                                    // Autoconnect
+  File param = FlashFS.open(PARAM_SENSOR_FILE, "r");                  // Autoconnect
+  if (param) {                                                        // Autoconnect
+    if (aux.loadElement(param)) {                                     // Autoconnect
+      getSensorParams(aux);                                           // Autoconnect
+      Serial.println(" loaded");                                      // Autoconnect
+    }                                                                 // Autoconnect
+    else                                                              // Autoconnect
+      Serial.println(" failed to load");                              // Autoconnect
+    param.close();                                                    // Autoconnect
+  }                                                                   // Autoconnect
+  else                                                                // Autoconnect
+    Serial.println(" open failed");                                   // Autoconnect
+  return String("");                                                  // Autoconnect
+}                                                                     // Autoconnect
+                                                                                
+// Save the value of each element entered by '/sensor_setting' to the
+// parameter file. The saveParamsSensor as below is a callback function of
+// /sensor_save. When invoking this handler, the input value of each
+// element is already stored in '/sensor_setting'.
+// In the Sketch, you can output to stream its elements specified by name.
+String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Autoconnect
+  // The 'where()' function returns the AutoConnectAux that caused
+  // the transition to this page.
+  AutoConnectAux&   device_setting = *portal.aux(portal.where());          // Autoconnect
+  getSensorParams(device_setting);                                         // Autoconnect
+
+  // The entered value is owned by AutoConnectAux of /mqtt_setting.
+  // To retrieve the elements of /sensor_setting, it is necessary to get
+  // the AutoConnectAux object of /sensor_setting.
+  File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
+  device_setting.saveElement(param, {"beenodename", "hivenid", "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio"});     // Autoconnect
+  param.close();                                                            // Autoconnect
+  _CfgStorage.needToReboot = true;                                          // Autoconnect
+  Serial.println("Need to reboot device");                                  // Autoconnect
+
+  // Echo back saved parameters to AutoConnectAux page.
+  aux[F("beenodename")].value = _CfgStorage.beenodename;                       // Autoconnect
+  aux[F("hiveid")].value = _CfgStorage.hivename;                             // Autoconnect
+  aux[F("deepSleepTime")].value = _CfgStorage.deepSleepTime;                   // Autoconnect
+  aux[F("useDeepSleep")].value = _CfgStorage.useDeepSleep;                     // Autoconnect
+  aux[F("sdaio")].value = _CfgStorage.sdaio;                                   // AXDL345, RTC
+  aux[F("sdlio")].value = _CfgStorage.sdlio;                                   // AXDL345, RTC
   return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
