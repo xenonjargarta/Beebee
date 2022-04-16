@@ -458,6 +458,7 @@ void SetupAutoConnect()
     AutoConnectAux& device_setting = *portal.aux(AUX_DEVICE_SETTING_URI);// Autoconnect
     loadDeviceParams(device_setting, args);                              // Autoconnect
     portal.on(AUX_DEVICE_SETTING_URI, loadDeviceParams);                 // Autoconnect
+    portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);                    // Autoconnect
   }
   else
   {
@@ -484,6 +485,7 @@ void SetupAutoConnect()
     AutoConnectAux& message_setting = *portal.aux(AUX_MESSAGE_SETTING_URI);// Autoconnect
     loadSensorParams(message_setting, args);                              // Autoconnect
     portal.on(AUX_SENSOR_SETTING_URI, loadMessageParams);                 // Autoconnect
+    portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);                    // Autoconnect
   }                                                                      // Autoconnect
   messagepage.close();                                 // Autoconnect
   SPIFFS.end();                                       // Autoconnect

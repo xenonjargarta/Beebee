@@ -1,10 +1,9 @@
 [
   {
-    "title": "Bee Node Setting",
+    "title": "Sensor Setting",
     "uri": "/sensor_setting",
     "menu": true,
-    "element": 
-    [
+    "element": [
       {
         "name": "style",
         "type": "ACStyle",
@@ -13,19 +12,37 @@
       {
         "name": "header",
         "type": "ACText",
-        "value": "<h2>Bee Node Configuration</h2>",
+        "value": "<h2>Sensor Configuration</h2>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
       },
       {
         "name": "caption",
         "type": "ACText",
-        "value": "Setting for bee node and connection sensors",
+        "value": "Setup sensors configuration",
         "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "save",
+        "type": "ACSubmit",
+        "value": "Save",
+        "uri": "/sensor_save"
+      },
+      {
+        "name": "discard",
+        "type": "ACSubmit",
+        "value": "Discard",
+        "uri": "/"
       },
       {
         "name": "newline",
         "type": "ACElement",
-        "value": "<hr>"
+        "value": "<hr style='width:100%;height:2px'>"
+      },
+      {
+        "name": "caption1",
+        "type": "ACText",
+        "value": "Set properties for weigth sensor HX711 (need set dout/sck pin)",
+        "style": "font-family:serif;color:#4682b4;"
       },
 	    {
         "name": "useWeigthSensor",
@@ -39,10 +56,11 @@
         "type": "ACElement",
         "value": "<hr>"
       },
-	    {
-        "name": "newline3",
-        "type": "ACElement",
-        "value": "<hr>"
+      {
+        "name": "caption2",
+        "type": "ACText",
+        "value": "Set properties for vibration sensor ADXL335 (need set sda/sdl pin)",
+        "style": "font-family:serif;color:#4682b4;"
       },
  	    {
         "name": "useVibrationSensor",
@@ -50,6 +68,11 @@
         "value": "unique",
         "label": "Use vibration sensor (ADXL335) ",
         "checked": false
+      },
+      {
+        "name": "newline13",
+        "type": "ACElement",
+        "value": "<hr style='width:50%'>"
       },
       {
         "name": "acc_datarate",
@@ -76,6 +99,11 @@
         "arrange": "vertical"
       },
       {
+        "name": "newline12",
+        "type": "ACElement",
+        "value": "<hr style='width:50%'>"
+      },
+      {
         "name": "acc_range",
         "type": "ACRadio",
         "value": [
@@ -86,6 +114,11 @@
         ],
         "label": "Range (g)",
         "arrange": "vertical"
+      },
+      {
+        "name": "newline11",
+        "type": "ACElement",
+        "value": "<hr style='width:50%'>"
       },
       {
         "name": "acc_usefullres",
@@ -100,11 +133,23 @@
         "value": "<hr>"
       },
       {
+        "name": "caption3",
+        "type": "ACText",
+        "value": "Set properties for temp sensor Dallas18 (need set onewirebus pin)",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
         "name": "useTemperatureSensor",
         "type": "ACCheckbox",
         "value": "unique",
-        "label": "Use temperature sensor (DS)",
+        "label": "Use temperature sensor (DS18)",
         "checked": false
+      },
+      {
+        "name": "caption4",
+        "type": "ACText",
+        "value": "Set properties for temp sensor BME280 (need set sda/sdl pin)",
+        "style": "font-family:serif;color:#4682b4;"
       },
       {
         "name": "useTempSensorTwo",
@@ -119,6 +164,12 @@
         "value": "<hr>"
       },
       {
+        "name": "caption5",
+        "type": "ACText",
+        "value": "Set properties for time sensor DS3132 (need set sda/sdl pin)",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
         "name": "useRTCSensor",
         "type": "ACCheckbox",
         "value": "unique",
@@ -130,45 +181,18 @@
         "type": "ACElement",
         "value": "<hr>"
       },
-  
       {
-        "name": "newline11",
-        "type": "ACElement",
-        "value": "<hr>"
+        "name": "caption6",
+        "type": "ACText",
+        "value": "Set properties for humidity sensor BME280 (need set sda/sdl pin)",
+        "style": "font-family:serif;color:#4682b4;"
       },
-      {
-        "name": "newline12",
-        "type": "ACElement",
-        "value": "<hr>"
-      },
-      {
-        "name": "newline13",
-        "type": "ACElement",
-        "value": "<hr>"
-      }, 
       {
         "name": "useHumidity",
         "type": "ACCheckbox",
         "value": "unique",
         "label": "Use humidity sensor 2 (BME280)",
         "checked": false
-      },    
-      {
-        "name": "newline14",
-        "type": "ACElement",
-        "value": "<hr>"
-      },
-      {
-        "name": "save",
-        "type": "ACSubmit",
-        "value": "Save",
-        "uri": "/sensor_save"
-      },
-      {
-        "name": "discard",
-        "type": "ACSubmit",
-        "value": "Discard",
-        "uri": "/"
       }
     ]
   },

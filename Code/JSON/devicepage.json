@@ -89,7 +89,7 @@
       {
         "name": "caption3",
         "type": "ACText",
-        "value": "Set SD card properties",
+        "value": "Set network properties",
         "style": "font-family:serif;color:#4682b4;"
       },
       {
@@ -154,6 +154,16 @@
         "name": "Ppoweroff",
         "type": "ACInput",
         "label": "PowerOff PIN"
+      },
+      {
+        "name": "dout",
+        "type": "ACInput",
+        "label": "DOUT PIN"
+      },
+      {
+        "name": "sck ",
+        "type": "ACInput",
+        "label": "SCK  PIN"
       },
       {
         "name": "newline5",
