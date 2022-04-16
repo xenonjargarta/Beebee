@@ -466,8 +466,8 @@ void SetupAutoConnect()
   }
   devicepage.close();                                 // Autoconnect
  
-  File page1 = SPIFFS.open("/sensorpage.json", "r");  // Autoconnect
-  if(portal.load(page1))                              // Autoconnect
+  File sensorpage = SPIFFS.open("/sensorpage.json", "r");  // Autoconnect
+  if(portal.load(sensorpage))                              // Autoconnect
   {                                                   // Autoconnect
     PageArgument  args;                               // Autoconnect
     AutoConnectAux& sensor_setting = *portal.aux(AUX_SENSOR_SETTING_URI);// Autoconnect
@@ -475,7 +475,17 @@ void SetupAutoConnect()
     portal.on(AUX_SENSOR_SETTING_URI, loadSensorParams);                 // Autoconnect
     portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);                    // Autoconnect
   }                                                                      // Autoconnect
-  page1.close();                                      // Autoconnect
+  sensorpage.close();                                 // Autoconnect
+
+  File messagepage = SPIFFS.open("/messagepage.json", "r");  // Autoconnect
+  if(portal.load(messagepage))                              // Autoconnect
+  {                                                   // Autoconnect
+    PageArgument  args;                               // Autoconnect
+    AutoConnectAux& message_setting = *portal.aux(AUX_MESSAGE_SETTING_URI);// Autoconnect
+    loadSensorParams(message_setting, args);                              // Autoconnect
+    portal.on(AUX_SENSOR_SETTING_URI, loadMessageParams);                 // Autoconnect
+  }                                                                      // Autoconnect
+  messagepage.close();                                 // Autoconnect
   SPIFFS.end();                                       // Autoconnect
 
   // Start the filesystem
@@ -1325,7 +1335,32 @@ String loadDeviceParams(AutoConnectAux& aux, PageArgument& args)      // Autocon
   else                                                                // Autoconnect
     Serial.println(" open failed");                                   // Autoconnect
   return String("");                                                  // Autoconnect
-}                                                                     // Autoconnect
+}        // Autoconnect
+
+
+
+
+// Load parameters saved with saveParams from SPIFFS into the
+// elements defined in /device_settings JSON.
+String loadMessageParams(AutoConnectAux& aux, PageArgument& args)     // Autoconnect
+{                                                                     // Autoconnect
+  (void)(args);                                                       // Autoconnect
+  Serial.print(PARAM_SENSOR_FILE);                                    // Autoconnect
+  File param = FlashFS.open(PARAM_SENSOR_FILE, "r");                  // Autoconnect
+  if (param) {                                                        // Autoconnect
+    if (aux.loadElement(param)) {                                     // Autoconnect
+      getSensorParams(aux);                                           // Autoconnect
+      Serial.println(" loaded");                                      // Autoconnect
+    }                                                                 // Autoconnect
+    else                                                              // Autoconnect
+      Serial.println(" failed to load");                              // Autoconnect
+    param.close();                                                    // Autoconnect
+  }                                                                   // Autoconnect
+  else                                                                // Autoconnect
+    Serial.println(" open failed");                                   // Autoconnect
+  return String("");                                                  // Autoconnect
+}        // Autoconnect
+
                                                                                 
 // Save the value of each element entered by '/sensor_setting' to the
 // parameter file. The saveParamsSensor as below is a callback function of

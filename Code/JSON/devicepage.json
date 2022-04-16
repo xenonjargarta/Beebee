@@ -63,7 +63,7 @@
         "value": "<hr>"
       },
       {
-        "name": "caption3",
+        "name": "caption2",
         "type": "ACText",
         "value": "Setup deep sleep mode",
         "style": "font-family:serif;color:#4682b4;"
@@ -83,6 +83,24 @@
       },
       {
         "name": "newline3",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption3",
+        "type": "ACText",
+        "value": "Set SD card properties",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "hostname",
+        "type": "ACInput",
+        "value": "",
+        "label": "ESP host name",
+        "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9-])*[a-zA-Z0-9]){1,24}$"
+      },
+      {
+        "name": "newline4",
         "type": "ACElement",
         "value": "<hr>"
       },
@@ -138,7 +156,7 @@
         "label": "PowerOff PIN"
       },
       {
-        "name": "newline4",
+        "name": "newline5",
         "type": "ACElement",
         "value": "<hr>"
       },

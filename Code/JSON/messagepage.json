@@ -12,27 +12,87 @@
       {
         "name": "header",
         "type": "ACText",
-        "value": "<h2>MQTT broker settings</h2>",
+        "value": "<h2>Message and logging settings</h2>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
       },
       {
-        "name": "caption",
+        "name": "caption1",
         "type": "ACText",
-        "value": "Publishing the WiFi signal strength to MQTT channel. RSSI value of ESP8266 to the channel created on ThingSpeak",
+        "value": "Setup message & logging properties",
         "style": "font-family:serif;color:#4682b4;"
       },
       {
-        "name": "mqttserver",
+        "name": "save",
+        "type": "ACSubmit",
+        "value": "Save",
+        "uri": "/mqtt_save"
+      },
+      {
+        "name": "discard",
+        "type": "ACSubmit",
+        "value": "Discard",
+        "uri": "/"
+      },
+      {
+        "name": "newline",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption2",
+        "type": "ACText",
+        "value": "Set MQTT properties",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "useMQTT",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use mqtt server",
+        "checked": false
+      },
+      {
+        "name": "mqtt_server",
         "type": "ACInput",
         "label": "Server",
         "pattern": "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$",
-        "placeholder": "MQTT broker server"
+        "placeholder": "MQTT broker server (IP)"
       },
       {
-        "name": "channelid",
+        "name": "mqtt_port",
         "type": "ACInput",
-        "label": "Channel ID",
-        "pattern": "^[0-9]{6}$"
+        "label": "Port",
+        "placeholder": "MQTT broker server (IP)"
+      },
+      {
+        "name": "mqtt_topic",
+        "type": "ACInput",
+        "label": "Topic"
+      },
+      {
+        "name": "mqtt_messagedelay",
+        "type": "ACInput",
+        "label": "Message Delay"
+      },
+      {
+        "name": "mqtt_SSID",
+        "type": "ACInput",
+        "label": "SSID"
+      },
+      {
+        "name": "mqtt_wifi_pwd",
+        "type": "ACInput",
+        "label": "Wifi Password"
+      },
+      {
+        "name": "mqttusername",
+        "type": "ACInput",
+        "label": "MQTT Username (leave blank for anonym)"
+      },
+      {
+        "name": "mqttpassword",
+        "type": "ACInput",
+        "label": "MQTT Password (leave blank for anonym)"
       },
       {
         "name": "userkey",
@@ -45,46 +105,28 @@
         "label": "API Key"
       },
       {
-        "name": "newline",
+        "name": "newline3",
         "type": "ACElement",
         "value": "<hr>"
       },
       {
-        "name": "uniqueid",
+        "name": "caption3",
+        "type": "ACText",
+        "value": "Set SD card properties",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "useSDLogging",
         "type": "ACCheckbox",
         "value": "unique",
-        "label": "Use APID unique",
+        "label": "Use SD Log",
         "checked": false
       },
       {
-        "name": "period",
-        "type": "ACRadio",
-        "value": [
-          "30 sec.",
-          "60 sec.",
-          "180 sec."
-        ],
-        "label": "Update period",
-        "arrange": "vertical"
-      },
-      {
-        "name": "hostname",
+        "name": "sd_logfilepath",
         "type": "ACInput",
-        "value": "",
-        "label": "ESP host name",
-        "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9-])*[a-zA-Z0-9]){1,24}$"
-      },
-      {
-        "name": "save",
-        "type": "ACSubmit",
-        "value": "Save&amp;Start",
-        "uri": "/mqtt_save"
-      },
-      {
-        "name": "discard",
-        "type": "ACSubmit",
-        "value": "Discard",
-        "uri": "/"
+        "label": "Log file path",
+        "placeholder": "i.e. /value.txt"
       }
     ]
   },
