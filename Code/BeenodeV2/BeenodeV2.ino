@@ -450,6 +450,14 @@ void SetupLogging()                            // SDLogging
 
 void SetupAutoConnect()
 {
+   // Start the filesystem
+  FlashFS.begin(FORMAT_ON_FAIL);  // Autoconnect
+
+  // Attach the custom web pages
+  auxUpload.load(PAGE_UPLOAD);   // Autoconnect
+  auxBrowse.load(PAGE_BROWSE);   // Autoconnect
+  auxBrowse.on(postUpload);      // Autoconnect
+  
   SPIFFS.begin();                                     // Autoconnect
   File devicepage = SPIFFS.open("/devicepage.json", "r");  // Autoconnect
   if(portal.load(devicepage))                              // Autoconnect
@@ -464,6 +472,7 @@ void SetupAutoConnect()
   {
     Serial.println("Unable to load devicepage.json. Load now default device managemnt page");// Autoconnect
     auxDev.load(PAGE_DEVICE);      // Autoconnect
+    portal.join({auxDev});  // Autoconnect
   }
   devicepage.close();                                 // Autoconnect
  
@@ -490,15 +499,7 @@ void SetupAutoConnect()
   messagepage.close();                                 // Autoconnect
   SPIFFS.end();                                       // Autoconnect
 
-  // Start the filesystem
-  FlashFS.begin(FORMAT_ON_FAIL);  // Autoconnect
-
-  // Attach the custom web pages
-  auxUpload.load(PAGE_UPLOAD);   // Autoconnect
-  auxBrowse.load(PAGE_BROWSE);   // Autoconnect
-  
-  auxBrowse.on(postUpload);      // Autoconnect
-  portal.join({auxUpload, auxBrowse, auxDev});  // Autoconnect
+   portal.join({auxUpload, auxBrowse});  // Autoconnect
 
   // The handleFileRead callback function provides an echo back of the
   // uploaded file to the client. You can include the uploaded file in
