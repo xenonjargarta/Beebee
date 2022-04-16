@@ -25,8 +25,8 @@
       {
         "name": "save",
         "type": "ACSubmit",
-        "value": "Save",
-        "uri": "/sensor_save"
+        "value": "Save config",
+        "uri": "/device_save"
       },
       {
         "name": "discard",
@@ -93,7 +93,7 @@
         "style": "font-family:serif;color:#4682b4;"
       },
       {
-        "name": "hostname",
+        "name": "esphostname",
         "type": "ACInput",
         "value": "",
         "label": "ESP host name",
@@ -121,47 +121,42 @@
         "label": "SDL IO PIN"
       },
       {
-        "name": "onewirebus",
+        "name": "OneWireBusPin",
         "type": "ACInput",
         "label": "OneWireBus PIN"
       },
       {
-        "name": "miso",
+        "name": "MISOPIN",
         "type": "ACInput",
         "label": "MISO PIN"
       },
       {
-        "name": "mosi",
+        "name": "MOSIPIN",
         "type": "ACInput",
         "label": "MOSI PIN"
       },
       {
-        "name": "mosi",
-        "type": "ACInput",
-        "label": "MOSI PIN"
-      },
-      {
-        "name": "cs",
+        "name": "CSPIN",
         "type": "ACInput",
         "label": "CS PIN"
       },
       {
-        "name": "clk",
+        "name": "CLKPIN",
         "type": "ACInput",
         "label": "CLK PIN"
       },
       {
-        "name": "Ppoweroff",
+        "name": "POWEROFFPIN",
         "type": "ACInput",
         "label": "PowerOff PIN"
       },
       {
-        "name": "dout",
+        "name": "DOUTPIN",
         "type": "ACInput",
         "label": "DOUT PIN"
       },
       {
-        "name": "sck ",
+        "name": "SCKPIN",
         "type": "ACInput",
         "label": "SCK  PIN"
       },
@@ -233,7 +228,7 @@
         "posterior": "br"
       },
       {
-        "name": "hivename",
+        "name": "hiveid",
         "type": "ACText",
         "format": "Channel ID: %s",
         "posterior": "br"
@@ -261,7 +256,61 @@
         "type": "ACText",
         "format": "SDL: %s",
         "posterior": "br"
-      } 
+      },
+      {
+        "name": "SCKPIN",
+        "type": "ACText",
+        "format": "SCKPIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "DOUTPIN",
+        "type": "ACText",
+        "format": "DOUTPIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "POWEROFFPIN",
+        "type": "ACText",
+        "format": "POWEROFFPIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "CLKPIN",
+        "type": "ACText",
+        "format": "CLKPIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "CSPIN",
+        "type": "ACText",
+        "format": "CSPIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "MOSIPIN",
+        "type": "ACText",
+        "format": "MOSIPIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "MISOPIN",
+        "type": "ACText",
+        "format": "MISOPIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "OneWireBusPin",
+        "type": "ACText",
+        "format": "OneWireBusPin: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "esphostname",
+        "type": "ACText",
+        "format": "esphostname: %s",
+        "posterior": "br"
+      }
     ]
   }
 ]

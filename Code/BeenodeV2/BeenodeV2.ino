@@ -55,17 +55,32 @@
 #include "EspMQTTClient.h"          // MQTT
 #include <HX711_ADC.h>              // HDX711
 
-struct CfgStorage {
+struct CfgDevice {
+  String beenodename;             // Autoconnect
+  String hivename;                // Autoconnect, Message
+  bool needToReboot;              // Autoconnect
   String sdaio;                   // ADXL345, RTC
   String sdlio;                   // ADXL345, RTC
-  String beenodename;             // Autoconnect
-  String hivename;                // Autoconnect
-  int deepSleepTime;              // Autoconnect
+  bool useDeepSleep;              // DeepSleep
+  int deepSleepTime;              // DeepSleep
+  bool usePowerOff;               // PowerSwitch
+  String esphostname;             // Autoconnect
+  String OneWireBusPin;           // OneWireBus
+  String MISOPIN;                 // SDCard
+  String MOSIPIN;                 // SDCard
+  String CSPIN;                   // SDCard
+  String CLKPIN;                  // SDCard  
+  String DOUTPIN;                 // HDX711
+  String SCKPIN;                  // HDX711  
+  String POWEROFFPIN;             // PowerSwitch  
+};
+
+struct CfgStorage {
+
   bool useTemperatureSensor;      // OneWireTemperatur
   bool useVibrationSensor;        // ADXL345
   bool useRTCSensor;              // RTC
   bool setupReadyVibration;       // ADXL345
-  bool needToReboot;              // Autoconnect
   float acc_datarate;             // ADXL345
   bool acc_usefullres;            // ADXL345
   int acc_range;                  // ADXL345
@@ -77,15 +92,15 @@ struct CfgStorage {
   String mqtt_topic;              // MQTT
   String mqtt_server;             // MQTT
   String mqtt_port;               // MQTT
-  bool useDeepSleep;              // DeepSleep
   bool useSDLogging;              // SDLogging
   String mqtt_messagedelay;       // MQTT
   String sd_logfilepath;          // SDLogging
   bool useWeigthSensor;           // HDX711
   bool useTempSensorTwo;          // BME280
   bool useHumidity;               // BME280
-  bool usePowerOff;               // PowerSwitch
 };
+
+
 
 struct SensorValues
 {
@@ -99,7 +114,8 @@ struct SensorValues
   String humidity;        // BME280
 };
 
-CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000", "/values.txt", false, false, false, false};
+CfgDevice _CfgDevice = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", ""};
+CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, false, false};
 SensorValues _SensorValues = {"", "", "", "", "", "", "", ""};
 
 String CreateMessage()
@@ -184,12 +200,13 @@ unsigned bmestatus;                  // BME280
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
 
 const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
+const char* PARAM_DEVICE_FILE       = "/param_device.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
-const char* AUX_DEVICE_SETTING_URI  = "/device_setting";     // Autoconnect
+const char* AUX_DEVICE_SETTING_URI  = "/device_settings";    // Autoconnect
 const char* AUX_DEVICE_SAVE_URI     = "/device_save";        // Autoconnect
-const char* AUX_MESSAGE_SETTING_URI  = "/message_settings";  // Autoconnect
-const char* AUX_MESSAGE_SAVE_URI     = "/message_save";      // Autoconnect
+const char* AUX_MESSAGE_SETTING_URI = "/message_settings";   // Autoconnect
+const char* AUX_MESSAGE_SAVE_URI    = "/message_save";       // Autoconnect
 const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect
 const int HX711_dout = 0;                                    // HX711 mcu > HX711 dout pin
 const int HX711_sck = 2;                                     // HX711 mcu > HX711 sck pin
@@ -391,10 +408,10 @@ void setup()
 
   if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true || _CfgStorage.useTempSensorTwo == true || _CfgStorage.useHumidity == true) // DS3231-RTC, ADXL234, BME280
    {                                                                             // DS3231-RTC, ADXL234, BME280
-    int sda = _CfgStorage.sdaio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234, BME280
-    int sdl = _CfgStorage.sdlio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234, BME280
+    int sda = _CfgDevice.sdaio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234, BME280
+    int sdl = _CfgDevice.sdlio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234, BME280
       Wire.begin(sda,sdl);                                                       // DS3231-RTC, ADXL234, BME280
-      Serial.println("SDA/ SDL done " + _CfgStorage.sdaio + "/" + _CfgStorage.sdlio); // DS3231-RTC, ADXL234, BME280
+      Serial.println("SDA/ SDL done " + _CfgDevice.sdaio + "/" + _CfgDevice.sdlio); // DS3231-RTC, ADXL234, BME280
    }                                                                            // DS3231-RTC, ADXL234, BME280  
   
   if(_CfgStorage.useVibrationSensor) { SetupVibration(); }        // Vibration
@@ -403,7 +420,7 @@ void setup()
   if(_CfgStorage.useHumidity)  { SetupHumadity();  }              // Humadity
   if(_CfgStorage.useSDLogging) { SetupLogging();   }              // SDLogging
   if(_CfgStorage.useRTCSensor) { SetupRTC();       }              // RTC
-  if(_CfgStorage.useDeepSleep) { SetupDeepSleep(); }              // DeepSleep
+  if(_CfgDevice.useDeepSleep) { SetupDeepSleep(); }              // DeepSleep
   if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo) { SetupTemperature(); }  // Temperatur
   if(_CfgStorage.useWeigthSensor) { SetupWeigth(); }              // Weigth  
 }
@@ -449,15 +466,7 @@ void SetupLogging()                            // SDLogging
 }                                              // SDLogging
 
 void SetupAutoConnect()
-{
-   // Start the filesystem
-  FlashFS.begin(FORMAT_ON_FAIL);  // Autoconnect
-
-  // Attach the custom web pages
-  auxUpload.load(PAGE_UPLOAD);   // Autoconnect
-  auxBrowse.load(PAGE_BROWSE);   // Autoconnect
-  auxBrowse.on(postUpload);      // Autoconnect
-  
+{ 
   SPIFFS.begin();                                     // Autoconnect
   File devicepage = SPIFFS.open("/devicepage.json", "r");  // Autoconnect
   if(portal.load(devicepage))                              // Autoconnect
@@ -466,7 +475,7 @@ void SetupAutoConnect()
     AutoConnectAux& device_setting = *portal.aux(AUX_DEVICE_SETTING_URI);// Autoconnect
     loadDeviceParams(device_setting, args);                              // Autoconnect
     portal.on(AUX_DEVICE_SETTING_URI, loadDeviceParams);                 // Autoconnect
-    portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);                    // Autoconnect
+    portal.on(AUX_DEVICE_SAVE_URI, saveParamsDevice);                    // Autoconnect
   }
   else
   {
@@ -499,6 +508,13 @@ void SetupAutoConnect()
   messagepage.close();                                 // Autoconnect
   SPIFFS.end();                                       // Autoconnect
 
+   // Start the filesystem
+  FlashFS.begin(FORMAT_ON_FAIL);  // Autoconnect
+
+  // Attach the custom web pages
+  auxUpload.load(PAGE_UPLOAD);   // Autoconnect
+  auxBrowse.load(PAGE_BROWSE);   // Autoconnect
+  auxBrowse.on(postUpload);      // Autoconnect
    portal.join({auxUpload, auxBrowse});  // Autoconnect
 
   // The handleFileRead callback function provides an echo back of the
@@ -508,7 +524,7 @@ void SetupAutoConnect()
   // the link of the object tag, and the request can be caught by onNotFound handler.
   portal.onNotFound(handleFileRead);                // Autoconnect
   config.ota = AC_OTA_BUILTIN;                      // Autoconnect
-  config.title = _CfgStorage.beenodename + " v2.04.14b"; // Autoconnect
+  config.title = _CfgDevice.beenodename + " v2.05.4"; // Autoconnect
   config.homeUri = "/_ac";                          // Autoconnect
   config.bootUri = AC_ONBOOTURI_HOME;               // Autoconnect
   // Reconnect and continue publishing even if WiFi is disconnected.
@@ -732,7 +748,7 @@ void SetupCommunication()
       const char *wifipwdChar = _CfgStorage.mqtt_wifi_pwd.c_str();          // MQTT
       client.setWifiCredentials(ssidchar, wifipwdChar);                     // MQTT
       
-      const char *beenodechar = _CfgStorage.beenodename.c_str();            // MQTT
+      const char *beenodechar = _CfgDevice.beenodename.c_str();            // MQTT
       client.setMqttClientName(beenodechar);                                // MQTT
         
       const char *serverChar = _CfgStorage.mqtt_server.c_str();             // MQTT
@@ -761,8 +777,8 @@ void SetupDeepSleep()                                                           
   First we configure the wake up source
   We set our ESP32 to wake up every 5 seconds
   */
-  esp_sleep_enable_timer_wakeup(_CfgStorage.deepSleepTime * uS_TO_S_FACTOR);        //DeepSleep
-  Serial.println("Setup ESP32 to sleep for every " + String(_CfgStorage.deepSleepTime) +      
+  esp_sleep_enable_timer_wakeup(_CfgDevice.deepSleepTime * uS_TO_S_FACTOR);        //DeepSleep
+  Serial.println("Setup ESP32 to sleep for every " + String(_CfgDevice.deepSleepTime) +      
   " Seconds");                                                                      //DeepSleep
 
   /*
@@ -813,7 +829,7 @@ void loop()
 {
   delay(_CfgStorage.mqtt_messagedelay.toInt());
   HandleWebPage();                                                    // Autoconnect
-  if(!_CfgStorage.needToReboot)
+  if(!_CfgDevice.needToReboot)
   {
     if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo ) { HandleTemperature(); }     // Temperatur
     if(_CfgStorage.useWeigthSensor) { HandleWeigth(); }               // HX711
@@ -822,7 +838,7 @@ void loop()
     HandlePowerManagement(); 
     if(_CfgStorage.useHumidity)  { HandleHumadity();        }         // BME280
     if(_CfgStorage.useRTCSensor) { HandleRTC();             }         // DS3231-RTC
-    if(_CfgStorage.useDeepSleep) { HandleDeepSleep();       }         // DeepSleep
+    if(_CfgDevice.useDeepSleep) { HandleDeepSleep();       }         // DeepSleep
   }
   else
   {
@@ -954,9 +970,9 @@ void HandleDeepSleep()
   reset occurs.
   */
   Serial.println(digitalRead(BUTTON_PIN));                                            // DeepSleep
-  if(digitalRead(BUTTON_PIN) == 0 && _CfgStorage.useDeepSleep == true)                // DeepSleep
+  if(digitalRead(BUTTON_PIN) == 0 && _CfgDevice.useDeepSleep == true)                // DeepSleep
   {                                                                                   // DeepSleep
-    _CfgStorage.useDeepSleep = false;                                                 // DeepSleep
+    _CfgDevice.useDeepSleep = false;                                                 // DeepSleep
   }                                                                                   // DeepSleep
   else                                                                                // DeepSleep
   {                                                                                   // DeepSleep
@@ -1123,14 +1139,97 @@ void print_wakeup_reason()                            //DeepSleep
 
 // publishInterval = period.value().substring(0, 2).toInt() * 1000;
 
+void getDeviceParams(AutoConnectAux& aux) 
+{
+  _CfgDevice.beenodename = aux[F("beenodename")].value;                           // Autoconnect
+  _CfgDevice.beenodename.trim();                                                  // Autoconnect
+  _CfgDevice.hivename = aux[F("hiveid")].value;                                 // Autoconnect
+  _CfgDevice.hivename.trim();                                                     // Autoconnect
+  _CfgDevice.useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // DeepSleep 
+  _CfgDevice.deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // DeepSleep
+  _CfgDevice.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
+  _CfgDevice.sdaio.trim();                                                     // ADXL, RTC
+  _CfgDevice.sdlio = aux[F("sdlio")].value;                                    // Autoconnect
+  _CfgDevice.sdlio.trim();                                                     // ADXL, RTC
+
+  _CfgDevice.esphostname = aux[F("esphostname")].value;                        // 
+  _CfgDevice.esphostname.trim();                                               // 
+  _CfgDevice.OneWireBusPin = aux[F("OneWireBusPin")].value;                    // 
+  _CfgDevice.OneWireBusPin.trim();                                             // 
+
+  _CfgDevice.MISOPIN = aux[F("MISOPIN")].value;                             // 
+  _CfgDevice.MISOPIN.trim();                                               // 
+  _CfgDevice.MOSIPIN = aux[F("MOSIPIN")].value;                    // 
+  _CfgDevice.MOSIPIN.trim();                                             // 
+
+    _CfgDevice.CSPIN = aux[F("CSPIN")].value;                        // 
+  _CfgDevice.CSPIN.trim();                                               // 
+  _CfgDevice.CLKPIN = aux[F("CLKPIN")].value;                    // 
+  _CfgDevice.CLKPIN.trim();                                             // 
+
+  _CfgDevice.POWEROFFPIN = aux[F("POWEROFFPIN")].value;                        // 
+  _CfgDevice.POWEROFFPIN.trim();                                               // 
+  _CfgDevice.DOUTPIN = aux[F("DOUTPIN")].value;                    // 
+  _CfgDevice.DOUTPIN.trim();                                             // 
+
+  _CfgDevice.SCKPIN = aux[F("SCKPIN")].value;                    // 
+  _CfgDevice.SCKPIN.trim();                                             // 
+  
+  Serial.println(" ");                                              // Autoconnect 
+  Serial.println("Curren Configuration:");                          // Autoconnect 
+  Serial.print("Bee node name: ");                                  // Autoconnect 
+  Serial.println(_CfgDevice.beenodename);                          // Autoconnect 
+  Serial.print("Hive name: ");                                      // Autoconnect 
+  Serial.println(_CfgDevice.hivename);                             // Autoconnect 
+  Serial.print("Used deep sleep: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.useDeepSleep);                         // Autoconnect 
+  Serial.print("Deep sleep time: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.deepSleepTime);                        // Autoconnect 
+
+  Serial.print("esphostname: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.esphostname);                        // Autoconnect 
+
+  Serial.print("MISOPIN: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.MISOPIN);                        // Autoconnect 
+  Serial.print("MOSIPIN: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.MOSIPIN);                        // Autoconnect 
+
+  Serial.print("CSPIN: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.CSPIN);                        // Autoconnect 
+  Serial.print("CLKPIN: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.CLKPIN);                        // Autoconnect 
+
+  
+  Serial.print("POWEROFFPIN: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.POWEROFFPIN);                        // Autoconnect 
+  Serial.print("DOUTPIN: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.DOUTPIN);                        // Autoconnect 
+
+  Serial.print("SCKPIN: ");                                // Autoconnect 
+  Serial.println(_CfgDevice.SCKPIN);                        // Autoconnect 
+  
+  Serial.print("sdaio: ");                                          // ADXL345, RTC  
+  Serial.println(_CfgDevice.sdaio);                                // ADXL345, RTC 
+  Serial.print("sdlio: ");                                          // ADXL345, RTC 
+  Serial.println(_CfgDevice.sdlio);                                // ADXL345, RTC 
+
+  Serial.println("CFG Loaded end");                                  // Autoconnect 
+  Serial.println(" ");                                               // Autoconnect 
+
+  Serial.println(GET_CHIPID());
+  Serial.println(GET_HOSTNAME());
+
+}
+
+
 void getSensorParams(AutoConnectAux& aux) 
 {
- _CfgStorage.beenodename = aux[F("beenodename")].value;                           // Autoconnect
-  _CfgStorage.beenodename.trim();                                                  // Autoconnect
-  _CfgStorage.hivename = aux[F("hivename")].value;                                 // Autoconnect
-  _CfgStorage.hivename.trim();                                                     // Autoconnect
-  _CfgStorage.useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // DeepSleep 
-  _CfgStorage.deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // DeepSleep
+ _CfgDevice.beenodename = aux[F("beenodename")].value;                           // Autoconnect
+  _CfgDevice.beenodename.trim();                                                  // Autoconnect
+  _CfgDevice.hivename = aux[F("hiveid")].value;                                 // Autoconnect
+  _CfgDevice.hivename.trim();                                                     // Autoconnect
+  _CfgDevice.useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // DeepSleep 
+  _CfgDevice.deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // DeepSleep
   _CfgStorage.useTemperatureSensor  = aux[F("useTemperatureSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
   _CfgStorage.useVibrationSensor  = aux[F("useVibrationSensor")].as<AutoConnectCheckbox>().checked; // ADXL 
   _CfgStorage.useRTCSensor  = aux[F("useRTCSensor")].as<AutoConnectCheckbox>().checked; // RTC 
@@ -1161,10 +1260,10 @@ void getSensorParams(AutoConnectAux& aux)
   _CfgStorage.sd_logfilepath = aux[F("sd_logfilepath")].value;                  // SDLogging
   _CfgStorage.sd_logfilepath.trim();                                            // SDLOgging   
  _CfgStorage.useWeigthSensor = aux[F("useWeigthSensor")].as<AutoConnectCheckbox>().checked;       // HDX711  
-  _CfgStorage.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
-  _CfgStorage.sdaio.trim();                                                     // ADXL, RTC
-  _CfgStorage.sdlio = aux[F("sdlio")].value;                                    // Autoconnect
-  _CfgStorage.sdlio.trim();                                                     // ADXL, RTC
+  _CfgDevice.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
+  _CfgDevice.sdaio.trim();                                                     // ADXL, RTC
+  _CfgDevice.sdlio = aux[F("sdlio")].value;                                    // Autoconnect
+  _CfgDevice.sdlio.trim();                                                     // ADXL, RTC
   _CfgStorage.useTempSensorTwo = aux[F("useTempSensorTwo")].as<AutoConnectCheckbox>().checked;    // BME280
   _CfgStorage.useHumidity = aux[F("useHumidity")].as<AutoConnectCheckbox>().checked;    // BME280
 
@@ -1173,13 +1272,13 @@ void getSensorParams(AutoConnectAux& aux)
   Serial.println(" ");                                              // Autoconnect 
   Serial.println("Curren Configuration:");                          // Autoconnect 
   Serial.print("Bee node name: ");                                  // Autoconnect 
-  Serial.println(_CfgStorage.beenodename);                          // Autoconnect 
+  Serial.println(_CfgDevice.beenodename);                          // Autoconnect 
   Serial.print("Hive name: ");                                      // Autoconnect 
-  Serial.println(_CfgStorage.hivename);                             // Autoconnect 
+  Serial.println(_CfgDevice.hivename);                             // Autoconnect 
   Serial.print("Used deep sleep: ");                                // Autoconnect 
-  Serial.println(_CfgStorage.useDeepSleep);                         // Autoconnect 
+  Serial.println(_CfgDevice.useDeepSleep);                         // Autoconnect 
   Serial.print("Deep sleep time: ");                                // Autoconnect 
-  Serial.println(_CfgStorage.deepSleepTime);                        // Autoconnect 
+  Serial.println(_CfgDevice.deepSleepTime);                        // Autoconnect 
   Serial.print("Use temperature sensor: ");                         // Autoconnect 
   Serial.println(_CfgStorage.useTemperatureSensor);                 // Autoconnect 
   Serial.print("Use vibration sensor: ");                           // Autoconnect 
@@ -1197,9 +1296,9 @@ void getSensorParams(AutoConnectAux& aux)
   Serial.println(_CfgStorage.acc_range);                            // Autoconnect 
 
   Serial.print("sdaio: ");                                          // ADXL345, RTC  
-  Serial.println(_CfgStorage.sdaio);                                // ADXL345, RTC 
+  Serial.println(_CfgDevice.sdaio);                                // ADXL345, RTC 
   Serial.print("sdlio: ");                                          // ADXL345, RTC 
-  Serial.println(_CfgStorage.sdlio);                                // ADXL345, RTC 
+  Serial.println(_CfgDevice.sdlio);                                // ADXL345, RTC 
 
   Serial.print("useMQTT: ");                                        // MQTT 
   Serial.println(_CfgStorage.useMQTT);                              // MQTT
@@ -1286,12 +1385,12 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor", +
+  sensor_setting.saveElement(param, {"beenodename", "hiveid", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor", +
                                      "acc_datarate", "acc_range", "acc_usefullres", "sdaio", "sdlio", "useSDLogging", "useMQTT", "mqtt_SSID", "mqtt_wifi_pwd", "mqttusername", "mqttpassword", "mqtt_topic",  +
                                      "mqtt_server", "mqtt_port", "useWeigthSensor" , "mqtt_messagedelay" , "sd_logfilepath", "useTempSensorTwo",   "useHumidity"
                                     });     // Autoconnect
   param.close();                                                            // Autoconnect
-  _CfgStorage.needToReboot = true;                                          // Autoconnect
+  _CfgDevice.needToReboot = true;                                          // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
 
   // Echo back saved parameters to AutoConnectAux page.
@@ -1324,11 +1423,11 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
 String loadDeviceParams(AutoConnectAux& aux, PageArgument& args)      // Autoconnect
 {                                                                     // Autoconnect
   (void)(args);                                                       // Autoconnect
-  Serial.print(PARAM_SENSOR_FILE);                                    // Autoconnect
-  File param = FlashFS.open(PARAM_SENSOR_FILE, "r");                  // Autoconnect
+  Serial.print(PARAM_DEVICE_FILE);                                    // Autoconnect
+  File param = FlashFS.open(PARAM_DEVICE_FILE, "r");                  // Autoconnect
   if (param) {                                                        // Autoconnect
     if (aux.loadElement(param)) {                                     // Autoconnect
-      getSensorParams(aux);                                           // Autoconnect
+      getDeviceParams(aux);                                           // Autoconnect
       Serial.println(" loaded");                                      // Autoconnect
     }                                                                 // Autoconnect
     else                                                              // Autoconnect
@@ -1365,32 +1464,82 @@ String loadMessageParams(AutoConnectAux& aux, PageArgument& args)     // Autocon
 }        // Autoconnect
 
                                                                                 
-// Save the value of each element entered by '/sensor_setting' to the
+// Save the value of each element entered by '/device_setting' to the
 // parameter file. The saveParamsSensor as below is a callback function of
 // /sensor_save. When invoking this handler, the input value of each
-// element is already stored in '/sensor_setting'.
+// element is already stored in '/device_setting'.
 // In the Sketch, you can output to stream its elements specified by name.
 String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Autoconnect
   // The 'where()' function returns the AutoConnectAux that caused
   // the transition to this page.
   AutoConnectAux&   device_setting = *portal.aux(portal.where());          // Autoconnect
-  getSensorParams(device_setting);                                         // Autoconnect
+  getDeviceParams(device_setting);                                         // Autoconnect
 
   // The entered value is owned by AutoConnectAux of /mqtt_setting.
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
-  File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
-  device_setting.saveElement(param, {"beenodename", "hivenid", "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio"});     // Autoconnect
+  File param = FlashFS.open(PARAM_DEVICE_FILE, "w");                        // Autoconnect
+  device_setting.saveElement(param, {"beenodename", "hiveid" , "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio",+
+                                     "SCKPIN",      "DOUTPIN", "POWEROFFPIN",   "CLKPIN",        "CSPIN", "MOSIPIN",+
+                                     "MISOPIN",     "OneWireBusPin",            "esphostname"});     // Autoconnect*/
   param.close();                                                            // Autoconnect
-  _CfgStorage.needToReboot = true;                                          // Autoconnect
+  _CfgDevice.needToReboot = true;                                           // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
 
   // Echo back saved parameters to AutoConnectAux page.
-  aux[F("beenodename")].value = _CfgStorage.beenodename;                       // Autoconnect
-  aux[F("hiveid")].value = _CfgStorage.hivename;                             // Autoconnect
-  aux[F("deepSleepTime")].value = _CfgStorage.deepSleepTime;                   // Autoconnect
-  aux[F("useDeepSleep")].value = _CfgStorage.useDeepSleep;                     // Autoconnect
-  aux[F("sdaio")].value = _CfgStorage.sdaio;                                   // AXDL345, RTC
-  aux[F("sdlio")].value = _CfgStorage.sdlio;                                   // AXDL345, RTC
+  aux[F("beenodename")].value = _CfgDevice.beenodename;                       // Autoconnect
+  aux[F("hiveid")].value = _CfgDevice.hivename;                             // Autoconnect
+  aux[F("deepSleepTime")].value = _CfgDevice.deepSleepTime;                   // Autoconnect
+  aux[F("useDeepSleep")].value = _CfgDevice.useDeepSleep;                     // Autoconnect
+  aux[F("sdaio")].value = _CfgDevice.sdaio;                                   // AXDL345, RTC
+  aux[F("sdlio")].value = _CfgDevice.sdlio;                                   // AXDL345, RTC
+  aux[F("SCKPIN")].value = _CfgDevice.SCKPIN;                       // 
+  aux[F("DOUTPIN")].value = _CfgDevice.DOUTPIN;                             // 
+  aux[F("POWEROFFPIN")].value = _CfgDevice.POWEROFFPIN;                   // 
+  aux[F("CLKPIN")].value = _CfgDevice.CLKPIN;                     // 
+  aux[F("CSPIN")].value = _CfgDevice.CSPIN;                                   //                                   // 
+  aux[F("MOSIPIN")].value = _CfgDevice.MOSIPIN;                       // 
+  aux[F("MISOPIN")].value = _CfgDevice.MISOPIN;                             // 
+  aux[F("OneWireBusPin")].value = _CfgDevice.OneWireBusPin;                                   // 
+  aux[F("esphostname")].value = _CfgDevice.esphostname;                                  //
   return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
+
+void listAllFiles()
+{
+  File root = SPIFFS.open("/");
+  File file = root.openNextFile();
+  while(file)
+  {
+      Serial.print("FILE: ");
+      Serial.println(file.name());
+ 
+      file = root.openNextFile();
+  }
+}
+
+void formatspiff()
+{
+  if (!SPIFFS.begin(true))
+  {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
+ 
+  Serial.println("\n\n----Listing files before format----");
+  listAllFiles();
+ 
+  bool formatted = SPIFFS.format();
+ 
+  if(formatted)
+  {
+    Serial.println("\n\nSuccess formatting");
+  }
+  else
+  {
+    Serial.println("\n\nError formatting");
+  }
+ 
+  Serial.println("\n\n----Listing files after format----");
+  listAllFiles();
+}
