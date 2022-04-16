@@ -1,13 +1,13 @@
-/*    
+/*
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1081290/1966080  Bytes (54%) 
+                          Used programm memory 1081290/1966080  Bytes (54%)
                           Used memory for globale variabel 46412 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
                           Still free memory for local variable 281268 Bytes (Max 327680 Bytes)
-      
-      Features:           (x) Webpage 
+
+      Features:           (x) Webpage
                           (x) Wifi Lifecycle
-                          (x) Configuration management 
+                          (x) Configuration management
                           (x) MQTT
                           (x) Vibration Sensor (ADXL345)
                           (x) Weight Sensor (HX711)
@@ -29,12 +29,12 @@
                           EspMQTTClient 1.13.3 (+dependencies)
                           SPI/SD/FS default by Arduino
                           Adafruit BMP280 2.6.0
-                          
+
       Scenario supported: (X) Always On with webserver
                           (X) Sleep on always power
                           ( ) Sleep on battery
                           ( ) One time st startup
-                          
+
 */
 
 // ------------------------------ Includes ------------------------------------------
@@ -64,7 +64,7 @@ struct CfgStorage {
   bool useTemperatureSensor;      // OneWireTemperatur
   bool useVibrationSensor;        // ADXL345
   bool useRTCSensor;              // RTC
-  bool setupReadyVibration;       // ADXL345 
+  bool setupReadyVibration;       // ADXL345
   bool needToReboot;              // Autoconnect
   float acc_datarate;             // ADXL345
   bool acc_usefullres;            // ADXL345
@@ -84,33 +84,34 @@ struct CfgStorage {
   bool useWeigthSensor;           // HDX711
   bool useTempSensorTwo;          // BME280
   bool useHumidity;               // BME280
+  bool usePowerOff;               // PowerSwitch
 };
 
-struct SensorValues 
+struct SensorValues
 {
-  String temperatur;      // DS 
-  String vibration_z;     // ADXL345 
-  String vibration_x;     // ADXL345 
-  String vibration_y;     // ADXL345 
-  String weigth;          // HDX117 
-  String senortime;       // RTC 
-  String temperatur2;     // BME280 
+  String temperatur;      // DS
+  String vibration_z;     // ADXL345
+  String vibration_x;     // ADXL345
+  String vibration_y;     // ADXL345
+  String weigth;          // HDX117
+  String senortime;       // RTC
+  String temperatur2;     // BME280
   String humidity;        // BME280
 };
 
-CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000", "/values.txt", false, false, false};
+CfgStorage _CfgStorage = {"", "", "", "", 20, false, false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, false, "1000", "/values.txt", false, false, false, false};
 SensorValues _SensorValues = {"", "", "", "", "", "", "", ""};
 
 String CreateMessage()
 {
-  String message ="";
-  if(_CfgStorage.useRTCSensor)                      // RTC
-  {                                                 // RTC
+  String message = "";
+  if (_CfgStorage.useRTCSensor)                     // RTC
+  { // RTC
     //message += "T)";                              // RTC
     message += _SensorValues.senortime;             // RTC
   }                                                 // RTC
-  if(_CfgStorage.useVibrationSensor)                // ADXL345
-  {                                                 // ADXL345
+  if (_CfgStorage.useVibrationSensor)               // ADXL345
+  { // ADXL345
     message += ";";                                 // ADXL345
     //message += "H1)";                             // ADXL345
     message += _SensorValues.vibration_x;           // ADXL345
@@ -119,23 +120,23 @@ String CreateMessage()
     message += ";";                                 // ADXL345
     message += _SensorValues.vibration_y;           // ADXL345
   }                                                 // ADXL345
-  if(_CfgStorage.useTemperatureSensor)              // OneWireTemperatur
-  {                                                 // OneWireTemperatur
+  if (_CfgStorage.useTemperatureSensor)             // OneWireTemperatur
+  { // OneWireTemperatur
     message += ";";                                 // OneWireTemperatur
     message += _SensorValues.temperatur;            // OneWireTemperatur
   }                                                 // OneWireTemperatur
-  if(_CfgStorage.useWeigthSensor)                   // HDX117
-  {                                                 // HDX117
+  if (_CfgStorage.useWeigthSensor)                  // HDX117
+  { // HDX117
     message += ";";                                 // HDX117
     message += _SensorValues.weigth;                // HDX117
   }                                                 // HDX117
-  if(_CfgStorage.useTempSensorTwo)                  // BME280
-  {                                                 // BME280
+  if (_CfgStorage.useTempSensorTwo)                 // BME280
+  { // BME280
     message += ";";                                 // BME280
     message += _SensorValues.temperatur2;           // BME280
   }                                                 // BME280
-  if(_CfgStorage.useHumidity)                       // BME280
-  {                                                 // BME280
+  if (_CfgStorage.useHumidity)                      // BME280
+  { // BME280
     message += ";";                                 // BME280
     message += _SensorValues.humidity;              // BME280
   }                                                 // BME280
@@ -146,6 +147,7 @@ String CreateMessage()
 #define FORMAT_ON_FAIL  true        // Autoconnect
 #define GET_CHIPID()    ((uint16_t)(ESP.getEfuseMac()>>32))   // Autoconnect
 #define GET_HOSTNAME()  (WiFi.getHostname())                  // Autoconnect
+
 // Data wire is plugged into digital pin 2 on the Arduino
 #define ONE_WIRE_BUS 19                                       // OneWireTemperatur
 /* Conversion factor for micro seconds to seconds */
@@ -156,6 +158,7 @@ String CreateMessage()
 #define MOSI  13                                              // SDCARD
 #define CS    15                                              // SDCARD
 #define SEALEVELPRESSURE_HPA (1013.25)                        // BME280
+#define AUTOCONNECT_STARTUPTIME 10
 
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
@@ -166,9 +169,10 @@ AutoConnectConfig config("NewBeeNode", "1234567890");         // Autoconnect
 // easily for each page in the post-upload handler.
 AutoConnectAux auxUpload;           // Autoconnect
 AutoConnectAux auxBrowse;           // Autoconnect
+AutoConnectAux auxDev;              // Autoconnect
 RTClib myRTC;                       // DS3231-RTC
 // Setup a oneWire instance to communicate with any OneWire device
-OneWire oneWire(ONE_WIRE_BUS);       // OneWireTemperatur 
+OneWire oneWire(ONE_WIRE_BUS);       // OneWireTemperatur
 // Pass oneWire reference to DallasTemperature library
 DallasTemperature sensors(&oneWire); // OneWireTemperatur
 RTC_DATA_ATTR int bootCount = 0;     // DeepSleep
@@ -182,7 +186,7 @@ Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
 const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
-const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect      
+const char* AUX_SENSOR_CLEAR_URI    = "/sensor_clear";       // Autoconnect
 const int HX711_dout = 0;                                    // HX711 mcu > HX711 dout pin
 const int HX711_sck = 2;                                     // HX711 mcu > HX711 sck pin
 
@@ -194,9 +198,9 @@ HX711_ADC LoadCell(HX711_dout, HX711_sck);
 // Upload request custom Web page
 static const char PAGE_UPLOAD[] PROGMEM = R"(
 {
-  "uri": "/",
+  "uri": "/upload",
   "title": "Upload",
-  "menu": true,
+  "menu": false,
   "element": [
     {
       "name": "caption",
@@ -213,7 +217,7 @@ static const char PAGE_UPLOAD[] PROGMEM = R"(
       "name": "upload",
       "type": "ACSubmit",
       "value": "UPLOAD",
-      "uri": "/upload"
+      "uri": "/uploaddone"
     }
   ]
 }
@@ -222,7 +226,7 @@ static const char PAGE_UPLOAD[] PROGMEM = R"(
 // Upload result display
 static const char PAGE_BROWSE[] PROGMEM = R"(
 {
-  "uri": "/upload",
+  "uri": "/uploaddone",
   "title": "Upload",
   "menu": false,
   "element": [
@@ -251,6 +255,53 @@ static const char PAGE_BROWSE[] PROGMEM = R"(
     {
       "name": "object",
       "type": "ACElement"
+    }
+  ]
+}
+)";
+
+// Manage Devices
+static const char PAGE_DEVICE[] PROGMEM = R"(
+{
+  "uri": "/device",
+  "title": "Device Management",
+  "menu": true,
+  "element": [
+    {
+      "name": "reset",
+      "type": "ACSubmit",
+      "value": "Reset",
+      "uri": "/_ac#rdlg"
+    },
+    {
+      "name": "upload",
+      "type": "ACSubmit",
+      "value": "UPLOAD",
+      "uri": "/upload"
+    },
+    {
+      "name": "update",
+      "type": "ACSubmit",
+      "value": "Firmware update",
+      "uri": "/_ac/update"
+    },
+    {
+      "name": "disconnect",
+      "type": "ACSubmit",
+      "value": "Wifi disconnect",
+      "uri": "/_ac/disc"
+    },
+    {
+      "name": "newAP",
+      "type": "ACSubmit",
+      "value": "Configure new AP",
+      "uri": "/_ac/config"
+    },
+    {
+      "name": "openssid",
+      "type": "ACSubmit",
+      "value": "Open SSID",
+      "uri": "/_ac/open"
     }
   ]
 }
@@ -331,6 +382,9 @@ void setup()
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   Serial.println("TST");        // ESP Console
   SetupAutoConnect();           // Autoconnect
+    Serial.println(GET_CHIPID());        // ESP Console
+  Serial.println(GET_HOSTNAME());         // ESP Console  
+
   if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true || _CfgStorage.useTempSensorTwo == true || _CfgStorage.useHumidity == true) // DS3231-RTC, ADXL234, BME280
    {                                                                             // DS3231-RTC, ADXL234, BME280
     int sda = _CfgStorage.sdaio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234, BME280
@@ -411,8 +465,9 @@ void SetupAutoConnect()
   // Attach the custom web pages
   auxUpload.load(PAGE_UPLOAD);   // Autoconnect
   auxBrowse.load(PAGE_BROWSE);   // Autoconnect
+  auxDev.load(PAGE_DEVICE);        // Autoconnect
   auxBrowse.on(postUpload);      // Autoconnect
-  portal.join({ auxUpload, auxBrowse });  // Autoconnect
+  portal.join({ auxUpload, auxBrowse, auxDev});  // Autoconnect
 
   // The handleFileRead callback function provides an echo back of the
   // uploaded file to the client. You can include the uploaded file in
@@ -427,7 +482,6 @@ void SetupAutoConnect()
   // Reconnect and continue publishing even if WiFi is disconnected.
   config.autoReconnect = true;                      // Autoconnect
   config.reconnectInterval = 1;                     // Autoconnect
-  
   portal.config(config);                            // Autoconnect
   portal.begin();                                   // Autoconnect
 }
@@ -1056,7 +1110,7 @@ void getSensorParams(AutoConnectAux& aux)
   _CfgStorage.useSDLogging = aux[F("useSDLogging")].as<AutoConnectCheckbox>().checked; // SDLogging
   _CfgStorage.mqtt_server = aux[F("mqtt_server")].value;                          // MQTT
   _CfgStorage.mqtt_server.trim();                                                 // MQTT
- 
+
  _CfgStorage.useMQTT = aux[F("useMQTT")].as<AutoConnectCheckbox>().checked;    // SDLogging
   _CfgStorage.mqtt_SSID = aux[F("mqtt_SSID")].value;                            // Autoconnect
   _CfgStorage.mqtt_SSID.trim();                                                 // MQTT
@@ -1156,6 +1210,10 @@ void getSensorParams(AutoConnectAux& aux)
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
+
+  Serial.println(GET_CHIPID());
+  Serial.println(GET_HOSTNAME());
+
 }
 
 // Load parameters saved with saveParams from SPIFFS into the
@@ -1197,13 +1255,14 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
   sensor_setting.saveElement(param, {"beenodename", "hivename", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor", +
-  "acc_datarate","acc_range","acc_usefullres","sdaio","sdlio","useSDLogging","useMQTT","mqtt_SSID","mqtt_wifi_pwd","mqttusername","mqttpassword","mqtt_topic",  +
-  "mqtt_server", "mqtt_port", "useWeigthSensor" ,"mqtt_messagedelay" ,"sd_logfilepath", "useTempSensorTwo",   "useHumidity"});     // Autoconnect
+                                     "acc_datarate", "acc_range", "acc_usefullres", "sdaio", "sdlio", "useSDLogging", "useMQTT", "mqtt_SSID", "mqtt_wifi_pwd", "mqttusername", "mqttpassword", "mqtt_topic",  +
+                                     "mqtt_server", "mqtt_port", "useWeigthSensor" , "mqtt_messagedelay" , "sd_logfilepath", "useTempSensorTwo",   "useHumidity"
+                                    });     // Autoconnect
   param.close();                                                            // Autoconnect
   _CfgStorage.needToReboot = true;                                          // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
 
- // Echo back saved parameters to AutoConnectAux page.
+  // Echo back saved parameters to AutoConnectAux page.
   aux[F("beenodename")].value = _CfgStorage.beenodename;                       // Autoconnect
   aux[F("hivename")].value = _CfgStorage.hivename;                             // Autoconnect
   aux[F("deepSleepTime")].value = _CfgStorage.deepSleepTime;                   // Autoconnect
@@ -1216,20 +1275,20 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("acc_usefullres")].value = _CfgStorage.acc_usefullres;                 // Autoconnect
   aux[F("sdaio")].value = _CfgStorage.sdaio;                                   // AXDL345, RTC
   aux[F("sdlio")].value = _CfgStorage.sdlio;                                   // AXDL345, RTC
-  aux[F("useSDLogging")].value = _CfgStorage.useSDLogging;                     // MQTT  
-  aux[F("useMQTT")].value = _CfgStorage.useMQTT;                               // MQTT  
-  aux[F("mqtt_topic")].value = _CfgStorage.mqtt_topic;                         // MQTT  
-  aux[F("mqtt_SSID")].value = _CfgStorage.mqtt_SSID;                           // MQTT  
-  aux[F("mqtt_wifi_pwd")].value = _CfgStorage.mqtt_wifi_pwd;                   // MQTT  
-  aux[F("mqttusername")].value = _CfgStorage.mqttusername;                     // MQTT  
-  aux[F("mqttpassword")].value = _CfgStorage.mqttpassword;                     // MQTT  
-  aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT  
-  aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT 
-  aux[F("mqtt_messagedelay")].value = _CfgStorage.mqtt_messagedelay;           // MQTT 
+  aux[F("useSDLogging")].value = _CfgStorage.useSDLogging;                     // MQTT
+  aux[F("useMQTT")].value = _CfgStorage.useMQTT;                               // MQTT
+  aux[F("mqtt_topic")].value = _CfgStorage.mqtt_topic;                         // MQTT
+  aux[F("mqtt_SSID")].value = _CfgStorage.mqtt_SSID;                           // MQTT
+  aux[F("mqtt_wifi_pwd")].value = _CfgStorage.mqtt_wifi_pwd;                   // MQTT
+  aux[F("mqttusername")].value = _CfgStorage.mqttusername;                     // MQTT
+  aux[F("mqttpassword")].value = _CfgStorage.mqttpassword;                     // MQTT
+  aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT
+  aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT
+  aux[F("mqtt_messagedelay")].value = _CfgStorage.mqtt_messagedelay;           // MQTT
   aux[F("sd_logfilepath")].value = _CfgStorage.sd_logfilepath;                 // SD Logging
   aux[F("useWeigthSensor")].value = _CfgStorage.useWeigthSensor;               // HDX711
   aux[F("useTempSensorTwo")].value = _CfgStorage.useTempSensorTwo;             // BME280
   aux[F("useHumidity")].value = _CfgStorage.useHumidity;                       // BME280
- 
+
   return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
