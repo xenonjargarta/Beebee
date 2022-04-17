@@ -1,9 +1,9 @@
 /*
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1081290/1966080  Bytes (54%)
-                          Used memory for globale variabel 46412 Bytes (14%)
+                          Used programm memory 1085470/1966080  Bytes (55%)
+                          Used memory for globale variabel 46788 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 281268 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 280892 Bytes (Max 327680 Bytes)
 
       Features:           (x) Webpage
                           (x) Wifi Lifecycle
@@ -508,7 +508,7 @@ void SetupAutoConnect()
     AutoConnectAux& message_setting = *portal.aux(AUX_MESSAGE_SETTING_URI);// Autoconnect
     loadMessageParams(message_setting, args);                              // Autoconnect
     portal.on(AUX_MESSAGE_SETTING_URI, loadMessageParams);                 // Autoconnect
-   // portal.on(AUX_MESSAGE_SAVE_URI, saveMessageSensor);                    // Autoconnect
+    portal.on(AUX_MESSAGE_SAVE_URI, saveMessageSensor);                    // Autoconnect
   }                                                                      // Autoconnect
   messagepage.close();                                 // Autoconnect
   SPIFFS.end();                                       // Autoconnect

@@ -25,7 +25,7 @@
         "name": "save",
         "type": "ACSubmit",
         "value": "Save",
-        "uri": "/mqtt_save"
+        "uri": "/message_save"
       },
       {
         "name": "discard",
