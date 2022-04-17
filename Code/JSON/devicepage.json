@@ -161,6 +161,16 @@
         "label": "SCK  PIN"
       },
       {
+        "name": "RXPIN",
+        "type": "ACInput",
+        "label": "SCK  PIN"
+      },
+      {
+        "name": "TXPIN",
+        "type": "ACInput",
+        "label": "SCK  PIN"
+      },
+      {
         "name": "newline5",
         "type": "ACElement",
         "value": "<hr>"
@@ -326,6 +336,18 @@
         "name": "esphostname",
         "type": "ACText",
         "format": "esphostname: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "TXPIN",
+        "type": "ACText",
+        "format": "TX PIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "RXPIN",
+        "type": "ACText",
+        "format": "RX PIN: %s",
         "posterior": "br"
       }
     ]

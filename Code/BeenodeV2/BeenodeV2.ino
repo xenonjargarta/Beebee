@@ -73,6 +73,8 @@ struct CfgDevice {
   String DOUTPIN;                 // HDX711
   String SCKPIN;                  // HDX711  
   String POWEROFFPIN;             // PowerSwitch  
+  String TXPIN;                   // SIM  
+  String RXPIN;                   // SIM  
 };
 
 struct CfgMessage 
@@ -116,7 +118,7 @@ struct SensorValues
   String humidity;        // BME280
 };
 
-CfgDevice _CfgDevice = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", ""};
+CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", ""};
 CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, false, false};
 CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt"};
 
@@ -1179,6 +1181,13 @@ void getDeviceParams(AutoConnectAux& aux)
 
   _CfgDevice.SCKPIN = aux[F("SCKPIN")].value;                    // 
   _CfgDevice.SCKPIN.trim();                                             // 
+
+  _CfgDevice.TXPIN = aux[F("TXPIN")].value;                    // 
+  _CfgDevice.TXPIN.trim();                                             // 
+
+  _CfgDevice.RXPIN = aux[F("RXPIN")].value;                    // 
+  _CfgDevice.RXPIN.trim();                                             // 
+
   
   Serial.println(" ");                                              // Autoconnect 
   Serial.println("Curren Configuration:");                          // Autoconnect 
@@ -1217,6 +1226,12 @@ void getDeviceParams(AutoConnectAux& aux)
   Serial.println(_CfgDevice.sdaio);                                // ADXL345, RTC 
   Serial.print("sdlio: ");                                          // ADXL345, RTC 
   Serial.println(_CfgDevice.sdlio);                                // ADXL345, RTC 
+
+  
+  Serial.print("RXPIN: ");                                          // ADXL345, RTC  
+  Serial.println(_CfgDevice.RXPIN);                                // ADXL345, RTC 
+  Serial.print("TXPIN: ");                                          // ADXL345, RTC 
+  Serial.println(_CfgDevice.TXPIN);                                // ADXL345, RTC 
 
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -1456,7 +1471,7 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   File param = FlashFS.open(PARAM_DEVICE_FILE, "w");                        // Autoconnect
   device_setting.saveElement(param, {"beenodename", "hiveid" , "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio",+
                                      "SCKPIN",      "DOUTPIN", "POWEROFFPIN",   "CLKPIN",        "CSPIN", "MOSIPIN",+
-                                     "MISOPIN",     "OneWireBusPin",            "esphostname"});     // Autoconnect*/
+                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN"});     // Autoconnect*/
   param.close();                                                            // Autoconnect
   _CfgDevice.needToReboot = true;                                           // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -1477,6 +1492,8 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("MISOPIN")].value = _CfgDevice.MISOPIN;                             // 
   aux[F("OneWireBusPin")].value = _CfgDevice.OneWireBusPin;                                   // 
   aux[F("esphostname")].value = _CfgDevice.esphostname;                                  //
+  aux[F("TXPIN")].value = _CfgDevice.TXPIN;                                   // 
+  aux[F("RXPIN")].value = _CfgDevice.RXPIN;                                  //
   return String();                                                             // Autoconnect
 }      // Autoconnect
 
