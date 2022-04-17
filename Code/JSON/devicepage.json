@@ -65,7 +65,7 @@
       {
         "name": "caption2",
         "type": "ACText",
-        "value": "Setup deep sleep mode",
+        "value": "Setup power management",
         "style": "font-family:serif;color:#4682b4;"
       },
 	  	{
@@ -80,6 +80,18 @@
         "type": "ACInput",
         "label": "Time (Sec)",
         "pattern": "^[0-9]$"
+      },
+      {
+        "name": "usePowerOff",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use power off",
+        "checked": false
+      },
+      {
+        "name": "POWEROFFPIN",
+        "type": "ACInput",
+        "label": "PowerOff PIN"
       },
       {
         "name": "newline3",
@@ -144,11 +156,6 @@
         "name": "CLKPIN",
         "type": "ACInput",
         "label": "CLK PIN"
-      },
-      {
-        "name": "POWEROFFPIN",
-        "type": "ACInput",
-        "label": "PowerOff PIN"
       },
       {
         "name": "DOUTPIN",
@@ -376,6 +383,12 @@
         "name": "devicetype",
         "type": "ACText",
         "format": "Device Type: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "usePowerOff",
+        "type": "ACText",
+        "format": "Use power pin: %s",
         "posterior": "br"
       }
     ]

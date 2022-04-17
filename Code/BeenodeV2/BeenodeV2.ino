@@ -1,9 +1,9 @@
 /*
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1085470/1966080  Bytes (55%)
-                          Used memory for globale variabel 46788 Bytes (14%)
+                          Used programm memory 1088654/1966080  Bytes (55%)
+                          Used memory for globale variabel 46860 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 280892 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 280820 Bytes (Max 327680 Bytes)
 
       Features:           (x) Webpage
                           (x) Wifi Lifecycle
@@ -178,7 +178,6 @@ String CreateMessage()
 #define ONE_WIRE_BUS 19                                       // OneWireTemperatur
 /* Conversion factor for micro seconds to seconds */
 #define uS_TO_S_FACTOR 1000000                                //DeepSleep
-#define BUTTON_PIN 37                                         // GIOP21 pin connected to button
 #define SCK   14                                              // SDCARD
 #define MISO  12                                              // SDCARD
 #define MOSI  13                                              // SDCARD
@@ -265,7 +264,25 @@ static const char PAGE_BROWSE[] PROGMEM = R"(
     {
       "name": "caption",
       "type": "ACText",
-      "value": "<h2>Uploading ended</h2>"
+      "value": "<h4>Upload done. You need to reboot the device.</h4>",
+      "style": "text-align:center;color:#2f4f4f;padding:10px;"
+    },
+    {
+      "name": "reset",
+      "type": "ACSubmit",
+      "value": "Reset",
+      "uri": "/_ac#rdlg"
+    },
+    {
+      "name": "newline20",
+      "type": "ACElement",
+      "value": "<hr>"
+    },
+    {
+      "name": "caption5",
+      "type": "ACText",
+      "value": "Parameters saved as:",
+      "style": "font-family:serif;color:#4682b4;"
     },
     {
       "name": "filename",
@@ -409,12 +426,10 @@ void handleFileRead(void) {
 
 void setup() 
 {
-  delay(1000);                  // ESP startup
+  delay(10);                    // ESP startup
   Serial.begin(115200);         // ESP Console
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  Serial.println("TST");        // ESP Console
   SetupAutoConnect();           // Autoconnect
-    Serial.println(GET_CHIPID());        // ESP Console
+  Serial.println(GET_CHIPID());        // ESP Console
   Serial.println(GET_HOSTNAME());         // ESP Console  
 
   if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true || _CfgStorage.useTempSensorTwo == true || _CfgStorage.useHumidity == true) // DS3231-RTC, ADXL234, BME280
@@ -427,11 +442,11 @@ void setup()
   
   if(_CfgStorage.useVibrationSensor) { SetupVibration(); }        // Vibration
   SetupCommunication();         // MQTT, SDLogging
-  SetupPowerManagement();       // Power
+  if(_CfgDevice.usePowerOff)   { SetupPowerManagement(); }      // Power
   if(_CfgStorage.useHumidity)  { SetupHumadity();  }              // Humadity
   if(_CfgMessage.useSDLogging) { SetupLogging();   }              // SDLogging
   if(_CfgStorage.useRTCSensor) { SetupRTC();       }              // RTC
-  if(_CfgDevice.useDeepSleep) { SetupDeepSleep(); }              // DeepSleep
+  if(_CfgDevice.useDeepSleep)  { SetupDeepSleep(); }              // DeepSleep
   if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo) { SetupTemperature(); }  // Temperatur
   if(_CfgStorage.useWeigthSensor) { SetupWeigth(); }              // Weigth  
 }
@@ -806,7 +821,12 @@ void SetupDeepSleep()                                                           
 }                                                                                   //DeepSleep
 
 void SetupPowerManagement()
-{}
+{
+    pinMode(_CfgDevice.POWEROFFPIN.toInt(), OUTPUT);
+      delay(1000);            // Wartet eine Sekunde
+  digitalWrite(_CfgDevice.POWEROFFPIN.toInt(), LOW);
+  Serial.println(_CfgDevice.POWEROFFPIN.toInt());
+}
 
 void SetupHumadity()
 {
@@ -846,10 +866,10 @@ void loop()
     if(_CfgStorage.useWeigthSensor) { HandleWeigth(); }               // HX711
     if(_CfgStorage.useVibrationSensor && _CfgStorage.setupReadyVibration) { HandleVibration(); }  //ADXL345
     { HandleCommunication();  }                                       // MQTT, SDLogging
-    HandlePowerManagement(); 
     if(_CfgStorage.useHumidity)  { HandleHumadity();        }         // BME280
     if(_CfgStorage.useRTCSensor) { HandleRTC();             }         // DS3231-RTC
-    if(_CfgDevice.useDeepSleep) { HandleDeepSleep();       }         // DeepSleep
+    if(_CfgDevice.useDeepSleep)  { HandleDeepSleep();       }         // DeepSleep
+    if(_CfgDevice.usePowerOff)   { HandlePowerManagement(); }         // PowerOff
   }
   else
   {
@@ -980,23 +1000,22 @@ void HandleDeepSleep()
   sleep was started, it will sleep forever unless hardware
   reset occurs.
   */
-  Serial.println(digitalRead(BUTTON_PIN));                                            // DeepSleep
-  if(digitalRead(BUTTON_PIN) == 0 && _CfgDevice.useDeepSleep == true)                // DeepSleep
-  {                                                                                   // DeepSleep
-    _CfgDevice.useDeepSleep = false;                                                 // DeepSleep
-  }                                                                                   // DeepSleep
-  else                                                                                // DeepSleep
-  {                                                                                   // DeepSleep
     Serial.println("Going to sleep now");                                             // DeepSleep
     delay(1000);                                                                      // DeepSleep
     Serial.flush();                                                                   // DeepSleep
     esp_deep_sleep_start();                                                           // DeepSleep
-    Serial.println("This will never be printed");                                     // DeepSleep
-  }                                                                                   // DeepSleep
+    Serial.println("This will never be printed");                                     // DeepSleep                                                                                 // DeepSleep
 }                                                                                     // DeepSleep
 
 void HandlePowerManagement()
-{}
+{
+  Serial.println("In per mode");
+  digitalWrite(_CfgDevice.POWEROFFPIN.toInt(), HIGH);
+  delay(1000);            // Wartet eine Sekunde
+  digitalWrite(_CfgDevice.POWEROFFPIN.toInt(), LOW);
+  delay(1000);            // Wartet eine Sekunde
+  digitalWrite(_CfgDevice.POWEROFFPIN.toInt(), HIGH);
+}
 
 void HandleHumadity()                                                                 // BME280
 {                                                                                     // BME280
@@ -1191,6 +1210,9 @@ void getDeviceParams(AutoConnectAux& aux)
 
   _CfgDevice.RXPIN = aux[F("RXPIN")].value;                    // 
   _CfgDevice.RXPIN.trim();                                             // 
+
+  _CfgDevice.usePowerOff  = aux[F("usePowerOff")].as<AutoConnectCheckbox>().checked; // DeepSleep 
+  
   AutoConnectRadio& dr = aux[F("devicetype")].as<AutoConnectRadio>();         // MESSAGE
   _CfgDevice.devicetype = dr.value();                                          // MESSAGE
   
@@ -1240,6 +1262,10 @@ void getDeviceParams(AutoConnectAux& aux)
 
   Serial.print("devicetype: ");                                          // 
   Serial.println(_CfgDevice.devicetype);                                // 
+
+  
+  Serial.print("usePowerOff: ");                                          // 
+  Serial.println(_CfgDevice.usePowerOff);                                // 
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -1494,7 +1520,7 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   File param = FlashFS.open(PARAM_DEVICE_FILE, "w");                        // Autoconnect
   device_setting.saveElement(param, {"beenodename", "hiveid" , "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio",+
                                      "SCKPIN",      "DOUTPIN", "POWEROFFPIN",   "CLKPIN",        "CSPIN", "MOSIPIN",+
-                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN" ,"devicetype"});     // Autoconnect*/
+                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN" ,"devicetype" , "usePowerOff"});     // Autoconnect*/
   param.close();                                                            // Autoconnect
   _CfgDevice.needToReboot = true;                                           // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -1517,7 +1543,10 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("esphostname")].value = _CfgDevice.esphostname;                                  //
   aux[F("TXPIN")].value = _CfgDevice.TXPIN;                                   // 
   aux[F("RXPIN")].value = _CfgDevice.RXPIN;                                  //
-    aux[F("devicetype")].value = _CfgDevice.devicetype;                                  //
+  aux[F("devicetype")].value = _CfgDevice.devicetype;                                  //
+  aux[F("usePowerOff")].value = _CfgDevice.usePowerOff;                                  //
+
+    
   return String();                                                             // Autoconnect
 }      // Autoconnect
 
