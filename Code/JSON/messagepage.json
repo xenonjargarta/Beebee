@@ -34,9 +34,9 @@
         "uri": "/"
       },
       {
-        "name": "newline",
+        "name": "newline1",
         "type": "ACElement",
-        "value": "<hr style='width:100%;height:30px'>"
+        "value": "<hr style='width:100%'>"
       },
       {
         "name": "caption2",
@@ -95,7 +95,7 @@
         "label": "MQTT Password (leave blank for anonym)"
       },
       {
-        "name": "newline3",
+        "name": "newline2",
         "type": "ACElement",
         "value": "<hr>"
       },
@@ -117,6 +117,30 @@
         "type": "ACInput",
         "label": "Log file path",
         "placeholder": "i.e. /value.txt"
+      },
+      {
+        "name": "newline3",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption4",
+        "type": "ACText",
+        "value": "Set ESPNow properties",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "useESPNow",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use ESPNow",
+        "checked": false
+      },
+      {
+        "name": "espnow_receivermac",
+        "type": "ACInput",
+        "label": "Send to (MAC)",
+        "placeholder": "i.e. 3C:61:05:0A:38:09"
       }
     ]
   },
@@ -126,7 +150,7 @@
     "menu": false,
     "element": [
       {
-        "name": "caption",
+        "name": "caption5",
         "type": "ACText",
         "value": "<h4>You need to reboot the device.</h4>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
@@ -138,12 +162,12 @@
         "uri": "/_ac#rdlg"
       },
       {
-        "name": "newline20",
+        "name": "newline4",
         "type": "ACElement",
         "value": "<hr>"
       },
       {
-        "name": "caption5",
+        "name": "caption6",
         "type": "ACText",
         "value": "Parameters saved as:",
         "style": "font-family:serif;color:#4682b4;"
@@ -158,6 +182,12 @@
         "name": "mqtt_topic",
         "type": "ACText",
         "format": "Channel ID: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "sd_logfilepath",
+        "type": "ACText",
+        "format": "sd_logfilepath: %s",
         "posterior": "br"
       },
       {
@@ -193,12 +223,6 @@
         "posterior": "br"
       },
       {
-        "name": "mqttusername",
-        "type": "ACText",
-        "format": "mqttusername: %s",
-        "posterior": "br"
-      },
-      {
         "name": "mqtt_port",
         "type": "ACText",
         "format": "mqtt_port: %s",
@@ -211,9 +235,15 @@
         "posterior": "br"
       },
       {
-        "name": "sd_logfilepath",
+        "name": "useESPNow",
         "type": "ACText",
-        "format": "sd_logfilepath: %s",
+        "format": "useESPNow: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "espnow_receivermac",
+        "type": "ACText",
+        "format": "espnow_receivermac: %s",
         "posterior": "br"
       }
     ]

@@ -90,6 +90,8 @@ struct CfgMessage
   bool useSDLogging;              // SDLogging
   String mqtt_messagedelay;       // MQTT
   String sd_logfilepath;          // SDLogging
+  bool useESPNow;                 // ESPNOW
+  String espnow_receivermac;      // ESPNOW
 };
 
 struct CfgStorage 
@@ -120,7 +122,7 @@ struct SensorValues
 
 CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", ""};
 CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, false, false};
-CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt"};
+CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, ""};
 
 SensorValues _SensorValues = {"", "", "", "", "", "", "", ""};
 
@@ -1264,6 +1266,9 @@ void getMessageParams(AutoConnectAux& aux)
   _CfgMessage.mqtt_messagedelay.trim();                                         // MQTT
   _CfgMessage.sd_logfilepath = aux[F("sd_logfilepath")].value;                  // SDLogging
   _CfgMessage.sd_logfilepath.trim();                                            // SDLOgging   
+  _CfgMessage.useESPNow = aux[F("useESPNow")].as<AutoConnectCheckbox>().checked;// ESPNOW
+  _CfgMessage.espnow_receivermac = aux[F("espnow_receivermac")].value;          // ESPNOW
+  _CfgMessage.espnow_receivermac.trim();                                        // ESPNOW
 
 
   Serial.print("useMQTT: ");                                        // MQTT 
@@ -1295,6 +1300,12 @@ void getMessageParams(AutoConnectAux& aux)
   
   Serial.print("sd_logfilepath: ");                                 // SDLogging 
   Serial.println(_CfgMessage.sd_logfilepath);                       // SDLogging
+
+  Serial.print("useESPNow: ");                              // ESPNOW 
+  Serial.println(_CfgMessage.useESPNow);                    // ESPNOW
+  
+  Serial.print("espnow_receivermac: ");                                 // ESPNOW 
+  Serial.println(_CfgMessage.espnow_receivermac);                       // ESPNOW
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -1508,17 +1519,17 @@ String saveMessageSensor(AutoConnectAux& aux, PageArgument& args) {         // A
   // The 'where()' function returns the AutoConnectAux that caused
   // the transition to this page.
   AutoConnectAux&   message_setting = *portal.aux(portal.where());          // Autoconnect
-  getMessageParams(message_setting);                                         // Autoconnect
+  getMessageParams(message_setting);                                        // Autoconnect
 
   // The entered value is owned by AutoConnectAux of /mqtt_setting.
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_MESSAGE_FILE, "w");                        // Autoconnect
   message_setting.saveElement(param, {"useSDLogging", "useMQTT", "mqtt_SSID", "mqtt_wifi_pwd", "mqttusername", "mqttpassword", "mqtt_topic",  +
-                                      "mqtt_server", "mqtt_port", "mqtt_messagedelay" , "sd_logfilepath"});     // Autoconnect
-  param.close();                                                            // Autoconnect
-  _CfgDevice.needToReboot = true;                                          // Autoconnect
-  Serial.println("Need to reboot device");                                  // Autoconnect
+                                      "mqtt_server", "mqtt_port", "mqtt_messagedelay" , "sd_logfilepath", "espnow_receivermac", "useESPNow"});     // Autoconnect
+  param.close();                                                             // Autoconnect
+  _CfgDevice.needToReboot = true;                                            // Autoconnect
+  Serial.println("Need to reboot device");                                   // Autoconnect
 
   // Echo back saved parameters to AutoConnectAux page.
   aux[F("useSDLogging")].value = _CfgMessage.useSDLogging;                     // SD Logging
@@ -1532,13 +1543,10 @@ String saveMessageSensor(AutoConnectAux& aux, PageArgument& args) {         // A
   aux[F("mqtt_port")].value = _CfgMessage.mqtt_port;                           // MQTT
   aux[F("mqtt_messagedelay")].value = _CfgMessage.mqtt_messagedelay;           // MQTT
   aux[F("sd_logfilepath")].value = _CfgMessage.sd_logfilepath;                 // SD Logging
-
+  aux[F("espnow_receivermac")].value = _CfgMessage.espnow_receivermac;         // ESPNOW
+  aux[F("useESPNow")].value = _CfgMessage.useESPNow;                           // ESPNOW
   return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
-
-
-
-
 
 void listAllFiles()
 {
