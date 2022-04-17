@@ -75,6 +75,7 @@ struct CfgDevice {
   String POWEROFFPIN;             // PowerSwitch  
   String TXPIN;                   // SIM  
   String RXPIN;                   // SIM  
+  String devicetype;              // DeviceType
 };
 
 struct CfgMessage 
@@ -92,6 +93,7 @@ struct CfgMessage
   String sd_logfilepath;          // SDLogging
   bool useESPNow;                 // ESPNOW
   String espnow_receivermac;      // ESPNOW
+  String msg_coding;              // Message
 };
 
 struct CfgStorage 
@@ -120,9 +122,9 @@ struct SensorValues
   String humidity;        // BME280
 };
 
-CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", ""};
+CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", "", ""};
 CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, false, false};
-CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, ""};
+CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, "", ""};
 
 SensorValues _SensorValues = {"", "", "", "", "", "", "", ""};
 
@@ -1189,7 +1191,8 @@ void getDeviceParams(AutoConnectAux& aux)
 
   _CfgDevice.RXPIN = aux[F("RXPIN")].value;                    // 
   _CfgDevice.RXPIN.trim();                                             // 
-
+  AutoConnectRadio& dr = aux[F("devicetype")].as<AutoConnectRadio>();         // MESSAGE
+  _CfgDevice.devicetype = dr.value();                                          // MESSAGE
   
   Serial.println(" ");                                              // Autoconnect 
   Serial.println("Curren Configuration:");                          // Autoconnect 
@@ -1235,6 +1238,9 @@ void getDeviceParams(AutoConnectAux& aux)
   Serial.print("TXPIN: ");                                          // ADXL345, RTC 
   Serial.println(_CfgDevice.TXPIN);                                // ADXL345, RTC 
 
+  Serial.print("devicetype: ");                                          // 
+  Serial.println(_CfgDevice.devicetype);                                // 
+  
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
 
@@ -1269,6 +1275,8 @@ void getMessageParams(AutoConnectAux& aux)
   _CfgMessage.useESPNow = aux[F("useESPNow")].as<AutoConnectCheckbox>().checked;// ESPNOW
   _CfgMessage.espnow_receivermac = aux[F("espnow_receivermac")].value;          // ESPNOW
   _CfgMessage.espnow_receivermac.trim();                                        // ESPNOW
+  AutoConnectRadio& dr = aux[F("msg_coding")].as<AutoConnectRadio>();         // MESSAGE
+  _CfgMessage.msg_coding = dr.value();                                          // MESSAGE
 
 
   Serial.print("useMQTT: ");                                        // MQTT 
@@ -1306,6 +1314,10 @@ void getMessageParams(AutoConnectAux& aux)
   
   Serial.print("espnow_receivermac: ");                                 // ESPNOW 
   Serial.println(_CfgMessage.espnow_receivermac);                       // ESPNOW
+
+  Serial.print("msg_coding: ");                                 // MESSAGE 
+  Serial.println(_CfgMessage.msg_coding);                       // MESSAGE
+  
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -1482,7 +1494,7 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   File param = FlashFS.open(PARAM_DEVICE_FILE, "w");                        // Autoconnect
   device_setting.saveElement(param, {"beenodename", "hiveid" , "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio",+
                                      "SCKPIN",      "DOUTPIN", "POWEROFFPIN",   "CLKPIN",        "CSPIN", "MOSIPIN",+
-                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN"});     // Autoconnect*/
+                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN" ,"devicetype"});     // Autoconnect*/
   param.close();                                                            // Autoconnect
   _CfgDevice.needToReboot = true;                                           // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -1505,6 +1517,7 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("esphostname")].value = _CfgDevice.esphostname;                                  //
   aux[F("TXPIN")].value = _CfgDevice.TXPIN;                                   // 
   aux[F("RXPIN")].value = _CfgDevice.RXPIN;                                  //
+    aux[F("devicetype")].value = _CfgDevice.devicetype;                                  //
   return String();                                                             // Autoconnect
 }      // Autoconnect
 
@@ -1526,25 +1539,29 @@ String saveMessageSensor(AutoConnectAux& aux, PageArgument& args) {         // A
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_MESSAGE_FILE, "w");                        // Autoconnect
   message_setting.saveElement(param, {"useSDLogging", "useMQTT", "mqtt_SSID", "mqtt_wifi_pwd", "mqttusername", "mqttpassword", "mqtt_topic",  +
-                                      "mqtt_server", "mqtt_port", "mqtt_messagedelay" , "sd_logfilepath", "espnow_receivermac", "useESPNow"});     // Autoconnect
+                                      "mqtt_server", "mqtt_port", "mqtt_messagedelay" , "sd_logfilepath", "espnow_receivermac", "useESPNow", "msg_coding"});     // Autoconnect
   param.close();                                                             // Autoconnect
   _CfgDevice.needToReboot = true;                                            // Autoconnect
   Serial.println("Need to reboot device");                                   // Autoconnect
 
   // Echo back saved parameters to AutoConnectAux page.
   aux[F("useSDLogging")].value = _CfgMessage.useSDLogging;                     // SD Logging
-  aux[F("useMQTT")].value = _CfgMessage.useMQTT;                               // MQTT
   aux[F("mqtt_topic")].value = _CfgMessage.mqtt_topic;                         // MQTT
+  aux[F("mqtt_server")].value = _CfgMessage.mqtt_server;                       // MQTT
+  aux[F("mqtt_messagedelay")].value = _CfgMessage.mqtt_messagedelay;           // MQTT
+  aux[F("useMQTT")].value = _CfgMessage.useMQTT;                               // MQTT
   aux[F("mqtt_SSID")].value = _CfgMessage.mqtt_SSID;                           // MQTT
   aux[F("mqtt_wifi_pwd")].value = _CfgMessage.mqtt_wifi_pwd;                   // MQTT
   aux[F("mqttusername")].value = _CfgMessage.mqttusername;                     // MQTT
   aux[F("mqttpassword")].value = _CfgMessage.mqttpassword;                     // MQTT
-  aux[F("mqtt_server")].value = _CfgMessage.mqtt_server;                       // MQTT
-  aux[F("mqtt_port")].value = _CfgMessage.mqtt_port;                           // MQTT
-  aux[F("mqtt_messagedelay")].value = _CfgMessage.mqtt_messagedelay;           // MQTT
+
   aux[F("sd_logfilepath")].value = _CfgMessage.sd_logfilepath;                 // SD Logging
+
+  aux[F("mqtt_port")].value = _CfgMessage.mqtt_port;                           // MQTT
   aux[F("espnow_receivermac")].value = _CfgMessage.espnow_receivermac;         // ESPNOW
   aux[F("useESPNow")].value = _CfgMessage.useESPNow;                           // ESPNOW
+  aux[F("msg_coding")].value = _CfgMessage.msg_coding;                           // ESPNOW
+  
   return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
 

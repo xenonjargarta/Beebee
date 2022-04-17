@@ -141,6 +141,28 @@
         "type": "ACInput",
         "label": "Send to (MAC)",
         "placeholder": "i.e. 3C:61:05:0A:38:09"
+      },
+      {
+        "name": "newline4",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption5",
+        "type": "ACText",
+        "value": "Set Message Details",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "msg_coding",
+        "type": "ACRadio",
+        "value": [
+          "Bit",
+          "Byte",
+          "Plain"
+        ],
+        "label": "Choose coding",
+        "arrange": "vertical"
       }
     ]
   },
@@ -150,7 +172,7 @@
     "menu": false,
     "element": [
       {
-        "name": "caption5",
+        "name": "caption100",
         "type": "ACText",
         "value": "<h4>You need to reboot the device.</h4>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
@@ -162,7 +184,7 @@
         "uri": "/_ac#rdlg"
       },
       {
-        "name": "newline4",
+        "name": "newline100",
         "type": "ACElement",
         "value": "<hr>"
       },
@@ -244,6 +266,12 @@
         "name": "espnow_receivermac",
         "type": "ACText",
         "format": "espnow_receivermac: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "msg_coding",
+        "type": "ACText",
+        "format": "msg_coding: %s",
         "posterior": "br"
       }
     ]

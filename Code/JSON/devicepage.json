@@ -178,6 +178,28 @@
       {
         "name": "caption5",
         "type": "ACText",
+        "value": "Set device type",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "devicetype",
+        "type": "ACRadio",
+        "value": [
+          "Sensor",
+          "BController",
+          "Sensor and Controller"
+        ],
+        "label": "",
+        "arrange": "vertical"
+      },
+      {
+        "name": "newline6",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption6",
+        "type": "ACText",
         "value": "Basic operations",
         "style": "font-family:serif;color:#4682b4;"
       },
@@ -348,6 +370,12 @@
         "name": "RXPIN",
         "type": "ACText",
         "format": "RX PIN: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "devicetype",
+        "type": "ACText",
+        "format": "Device Type: %s",
         "posterior": "br"
       }
     ]
