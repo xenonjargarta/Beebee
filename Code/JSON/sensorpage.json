@@ -205,32 +205,25 @@
       {
         "name": "caption",
         "type": "ACText",
-        "value": "<h4>You need to reboot the device. Parameters saved as:</h4>",
+        "value": "<h4>You need to reboot the device.</h4>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
       },
       {
-        "name": "beenodename",
-        "type": "ACText",
-        "format": "Server: %s",
-        "posterior": "br"
+        "name": "reset",
+        "type": "ACSubmit",
+        "value": "Reset",
+        "uri": "/_ac#rdlg"
       },
       {
-        "name": "hivename",
-        "type": "ACText",
-        "format": "Channel ID: %s",
-        "posterior": "br"
+        "name": "newline20",
+        "type": "ACElement",
+        "value": "<hr>"
       },
       {
-        "name": "useDeepSleep",
+        "name": "caption5",
         "type": "ACText",
-        "format": "Use deep sleep: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "deepSleepTime",
-        "type": "ACText",
-        "format": "Deep sleep time: %s",
-        "posterior": "br"
+        "value": "Parameters saved as:",
+        "style": "font-family:serif;color:#4682b4;"
       },
       {
         "name": "useTemperatureSensor",
@@ -266,84 +259,6 @@
         "name": "acc_datarate",
         "type": "ACText",
         "format": "Vibration datra rate (Hz): %s",
-        "posterior": "br"
-      },
-      {
-        "name": "sdaio",
-        "type": "ACText",
-        "format": "SDA: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "sdlio",
-        "type": "ACText",
-        "format": "SDL: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "useSDLogging",
-        "type": "ACText",
-        "format": "Use SD Logging: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "useMQTT",
-        "type": "ACText",
-        "format": "Use MQTT Server: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqtt_server",
-        "type": "ACText",
-        "format": "MQTT Server IP: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqtt_port",
-        "type": "ACText",
-        "format": "MQTT Server Port: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqtt_SSID",
-        "type": "ACText",
-        "format": "MQTT SSID: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqtt_wifi_pwd",
-        "type": "ACText",
-        "format": "MQTT Wifi PAssword: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqttusername",
-        "type": "ACText",
-        "format": "MQTT username: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqttpassword",
-        "type": "ACText",
-        "format": "MQTT Password: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqtt_topic",
-        "type": "ACText",
-        "format": "MQTT Topic: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "mqtt_messagedelay",
-        "type": "ACText",
-        "format": "MQTT Message Delay: %s",
-        "posterior": "br"
-      },
-      {
-        "name": "sd_logfilepath",
-        "type": "ACText",
-        "format": "Log file path: %s",
         "posterior": "br"
       },
       {

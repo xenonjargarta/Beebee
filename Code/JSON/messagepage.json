@@ -95,16 +95,6 @@
         "label": "MQTT Password (leave blank for anonym)"
       },
       {
-        "name": "userkey",
-        "type": "ACInput",
-        "label": "User Key"
-      },
-      {
-        "name": "apikey",
-        "type": "ACInput",
-        "label": "API Key"
-      },
-      {
         "name": "newline3",
         "type": "ACElement",
         "value": "<hr>"
@@ -138,44 +128,93 @@
       {
         "name": "caption",
         "type": "ACText",
-        "value": "<h4>Parameters saved as:</h4>",
+        "value": "<h4>You need to reboot the device.</h4>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
       },
       {
-        "name": "mqttserver",
+        "name": "reset",
+        "type": "ACSubmit",
+        "value": "Reset",
+        "uri": "/_ac#rdlg"
+      },
+      {
+        "name": "newline20",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption5",
+        "type": "ACText",
+        "value": "Parameters saved as:",
+        "style": "font-family:serif;color:#4682b4;"
+      },
+      {
+        "name": "mqtt_server",
         "type": "ACText",
         "format": "Server: %s",
         "posterior": "br"
       },
       {
-        "name": "channelid",
+        "name": "mqtt_topic",
         "type": "ACText",
         "format": "Channel ID: %s",
         "posterior": "br"
       },
       {
-        "name": "userkey",
+        "name": "useSDLogging",
         "type": "ACText",
-        "format": "User Key: %s",
+        "format": "useSDLogging: %s",
+        "posterior": "br"
+      },      {
+        "name": "useMQTT",
+        "type": "ACText",
+        "format": "useMQTT: %s",
+        "posterior": "br"
+      },      {
+        "name": "mqtt_SSID",
+        "type": "ACText",
+        "format": "mqtt_SSID: %s",
+        "posterior": "br"
+      },      {
+        "name": "mqtt_wifi_pwd",
+        "type": "ACText",
+        "format": "mqtt_wifi_pwd: %s",
+        "posterior": "br"
+      },      {
+        "name": "mqttusername",
+        "type": "ACText",
+        "format": "mqttusername: %s",
         "posterior": "br"
       },
       {
-        "name": "apikey",
+        "name": "mqttpassword",
         "type": "ACText",
-        "format": "API Key: %s",
+        "format": "mqttpassword: %s",
         "posterior": "br"
       },
       {
-        "name": "period",
+        "name": "mqttusername",
         "type": "ACText",
-        "format": "Update period: %s sec.",
+        "format": "mqttusername: %s",
         "posterior": "br"
       },
       {
-        "name": "clear",
-        "type": "ACSubmit",
-        "value": "Clear channel",
-        "uri": "/mqtt_clear"
+        "name": "mqtt_port",
+        "type": "ACText",
+        "format": "mqtt_port: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "mqtt_messagedelay",
+        "type": "ACText",
+        "format": "mqtt_messagedelay: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "sd_logfilepath",
+        "type": "ACText",
+        "format": "sd_logfilepath: %s",
+        "posterior": "br"
       }
     ]
   }

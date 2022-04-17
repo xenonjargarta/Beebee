@@ -75,15 +75,8 @@ struct CfgDevice {
   String POWEROFFPIN;             // PowerSwitch  
 };
 
-struct CfgStorage {
-
-  bool useTemperatureSensor;      // OneWireTemperatur
-  bool useVibrationSensor;        // ADXL345
-  bool useRTCSensor;              // RTC
-  bool setupReadyVibration;       // ADXL345
-  float acc_datarate;             // ADXL345
-  bool acc_usefullres;            // ADXL345
-  int acc_range;                  // ADXL345
+struct CfgMessage 
+{
   bool useMQTT;                   // MQTT
   String mqtt_SSID;               // MQTT
   String mqtt_wifi_pwd;           // MQTT
@@ -95,12 +88,21 @@ struct CfgStorage {
   bool useSDLogging;              // SDLogging
   String mqtt_messagedelay;       // MQTT
   String sd_logfilepath;          // SDLogging
+};
+
+struct CfgStorage 
+{
+  bool useTemperatureSensor;      // OneWireTemperatur
+  bool useVibrationSensor;        // ADXL345
+  bool useRTCSensor;              // RTC
+  bool setupReadyVibration;       // ADXL345
+  float acc_datarate;             // ADXL345
+  bool acc_usefullres;            // ADXL345
+  int acc_range;                  // ADXL345
   bool useWeigthSensor;           // HDX711
   bool useTempSensorTwo;          // BME280
   bool useHumidity;               // BME280
 };
-
-
 
 struct SensorValues
 {
@@ -115,7 +117,9 @@ struct SensorValues
 };
 
 CfgDevice _CfgDevice = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", ""};
-CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, false, false};
+CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, false, false};
+CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt"};
+
 SensorValues _SensorValues = {"", "", "", "", "", "", "", ""};
 
 String CreateMessage()
@@ -200,6 +204,7 @@ unsigned bmestatus;                  // BME280
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);   // ADXL345
 
 const char* PARAM_SENSOR_FILE       = "/param_sensor.json";  // Autoconnect
+const char* PARAM_MESSAGE_FILE      = "/param_message.json"; // Autoconnect
 const char* PARAM_DEVICE_FILE       = "/param_device.json";  // Autoconnect
 const char* AUX_SENSOR_SETTING_URI  = "/sensor_setting";     // Autoconnect
 const char* AUX_SENSOR_SAVE_URI     = "/sensor_save";        // Autoconnect
@@ -418,7 +423,7 @@ void setup()
   SetupCommunication();         // MQTT, SDLogging
   SetupPowerManagement();       // Power
   if(_CfgStorage.useHumidity)  { SetupHumadity();  }              // Humadity
-  if(_CfgStorage.useSDLogging) { SetupLogging();   }              // SDLogging
+  if(_CfgMessage.useSDLogging) { SetupLogging();   }              // SDLogging
   if(_CfgStorage.useRTCSensor) { SetupRTC();       }              // RTC
   if(_CfgDevice.useDeepSleep) { SetupDeepSleep(); }              // DeepSleep
   if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo) { SetupTemperature(); }  // Temperatur
@@ -434,7 +439,7 @@ void SetupLogging()                            // SDLogging
   if (!SD.begin(CS,spi,80000000))              // SDLogging
   {                                            // SDLogging
     Serial.println("Card Mount Failed");       // SDLogging
-    _CfgStorage.useSDLogging = false;          // SDLogging
+    _CfgMessage.useSDLogging = false;          // SDLogging
   }                                            // SDLogging
   else                                         // SDLogging
   {                                            // SDLogging
@@ -501,9 +506,9 @@ void SetupAutoConnect()
   {                                                   // Autoconnect
     PageArgument  args;                               // Autoconnect
     AutoConnectAux& message_setting = *portal.aux(AUX_MESSAGE_SETTING_URI);// Autoconnect
-    loadSensorParams(message_setting, args);                              // Autoconnect
-    portal.on(AUX_SENSOR_SETTING_URI, loadMessageParams);                 // Autoconnect
-    portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);                    // Autoconnect
+    loadMessageParams(message_setting, args);                              // Autoconnect
+    portal.on(AUX_MESSAGE_SETTING_URI, loadMessageParams);                 // Autoconnect
+   // portal.on(AUX_MESSAGE_SAVE_URI, saveMessageSensor);                    // Autoconnect
   }                                                                      // Autoconnect
   messagepage.close();                                 // Autoconnect
   SPIFFS.end();                                       // Autoconnect
@@ -515,7 +520,7 @@ void SetupAutoConnect()
   auxUpload.load(PAGE_UPLOAD);   // Autoconnect
   auxBrowse.load(PAGE_BROWSE);   // Autoconnect
   auxBrowse.on(postUpload);      // Autoconnect
-   portal.join({auxUpload, auxBrowse});  // Autoconnect
+  portal.join({auxUpload, auxBrowse});  // Autoconnect
 
   // The handleFileRead callback function provides an echo back of the
   // uploaded file to the client. You can include the uploaded file in
@@ -741,20 +746,20 @@ void SetupWeigth()                                                  // HX711
 
 void SetupCommunication()
 {
-  if(_CfgStorage.useMQTT)                                                   // MQTT
+  if(_CfgMessage.useMQTT)                                                   // MQTT
   {                                                                         // MQTT
       client.enableDebuggingMessages();                                     // MQTT
-      const char *ssidchar = _CfgStorage.mqtt_SSID.c_str();                 // MQTT
-      const char *wifipwdChar = _CfgStorage.mqtt_wifi_pwd.c_str();          // MQTT
+      const char *ssidchar = _CfgMessage.mqtt_SSID.c_str();                 // MQTT
+      const char *wifipwdChar = _CfgMessage.mqtt_wifi_pwd.c_str();          // MQTT
       client.setWifiCredentials(ssidchar, wifipwdChar);                     // MQTT
       
       const char *beenodechar = _CfgDevice.beenodename.c_str();            // MQTT
       client.setMqttClientName(beenodechar);                                // MQTT
         
-      const char *serverChar = _CfgStorage.mqtt_server.c_str();             // MQTT
-      const char *usernameChar = _CfgStorage.mqttusername.c_str();          // MQTT
-      const char *passwordChar = _CfgStorage.mqttpassword.c_str();          // MQTT
-      client.setMqttServer(serverChar, usernameChar, passwordChar, _CfgStorage.mqtt_port.toInt());   // MQTT
+      const char *serverChar = _CfgMessage.mqtt_server.c_str();             // MQTT
+      const char *usernameChar = _CfgMessage.mqttusername.c_str();          // MQTT
+      const char *passwordChar = _CfgMessage.mqttpassword.c_str();          // MQTT
+      client.setMqttServer(serverChar, usernameChar, passwordChar, _CfgMessage.mqtt_port.toInt());   // MQTT
   }
 }
 
@@ -827,7 +832,7 @@ void SetupRTC()
 
 void loop() 
 {
-  delay(_CfgStorage.mqtt_messagedelay.toInt());
+  delay(_CfgMessage.mqtt_messagedelay.toInt());
   HandleWebPage();                                                    // Autoconnect
   if(!_CfgDevice.needToReboot)
   {
@@ -919,8 +924,8 @@ void HandleVibration()                                                   //ADXL3
 void HandleCommunication()                                                                      // MQTT, SDLOgging                                                   
 {                                                                                               // MQTT, SDLOgging
   String message = CreateMessage();                                                             // MQTT, SDLOgging
-  const char *mqtttopicChar = _CfgStorage.mqtt_topic.c_str();                                   // MQTT, SDLOgging
-  if(_CfgStorage.useMQTT)                                                                       // MQTT,
+  const char *mqtttopicChar = _CfgMessage.mqtt_topic.c_str();                                   // MQTT, SDLOgging
+  if(_CfgMessage.useMQTT)                                                                       // MQTT,
   {                                                                                             // MQTT,
     if(client.isConnected())                                                                    // MQTT,
     {                                                                                           // MQTT,
@@ -932,13 +937,13 @@ void HandleCommunication()                                                      
     }                                                                                             // MQTT,
     client.loop();                                                                                // MQTT,
   }                                                                                               // MQTT,
-  if(_CfgStorage.useSDLogging)                                                                    // SDLOgging
+  if(_CfgMessage.useSDLogging)                                                                    // SDLOgging
   {                                                                                               // SDLOgging
     message += "\n";                                                                              // SDLOgging
-    const char *SDsd_logfilepath = _CfgStorage.sd_logfilepath.c_str();                            // SDLOgging
+    const char *SDsd_logfilepath = _CfgMessage.sd_logfilepath.c_str();                            // SDLOgging
     const char *sdmessage = message.c_str();                                                      // SDLOgging
     appendFile(SD, SDsd_logfilepath, sdmessage);                                                  // SDLOgging
-    Serial.printf("Appending to file: %s\n", _CfgStorage.sd_logfilepath);                         // SDLOgging
+    Serial.printf("Appending to file: %s\n", _CfgMessage.sd_logfilepath);                         // SDLOgging
   }                                                                                               // SDLOgging
 }                                                                                                 // MQTT, SDLOgging
 
@@ -1221,15 +1226,67 @@ void getDeviceParams(AutoConnectAux& aux)
 
 }
 
+void getMessageParams(AutoConnectAux& aux) 
+{
+  _CfgMessage.useSDLogging = aux[F("useSDLogging")].as<AutoConnectCheckbox>().checked; // SDLogging
+  _CfgMessage.mqtt_server = aux[F("mqtt_server")].value;                          // MQTT
+  _CfgMessage.mqtt_server.trim();                                                 // MQTT
+
+  _CfgMessage.useMQTT = aux[F("useMQTT")].as<AutoConnectCheckbox>().checked;    // MQTT
+  _CfgMessage.mqtt_SSID = aux[F("mqtt_SSID")].value;                            // MQTT
+  _CfgMessage.mqtt_SSID.trim();                                                 // MQTT
+  _CfgMessage.mqtt_wifi_pwd = aux[F("mqtt_wifi_pwd")].value;                    // MQTT
+  _CfgMessage.mqtt_wifi_pwd.trim();                                             // MQTT
+  _CfgMessage.mqttusername = aux[F("mqttusername")].value;                      // MQTT
+  _CfgMessage.mqttusername.trim();                                              // MQTT
+  _CfgMessage.mqttpassword = aux[F("mqttpassword")].value;                      // MQTT
+  _CfgMessage.mqttpassword.trim();                                              // MQTT
+  _CfgMessage.mqtt_topic = aux[F("mqtt_topic")].value;                          // MQTT
+  _CfgMessage.mqtt_topic.trim();                                                // MQTT
+  _CfgMessage.mqtt_port = aux[F("mqtt_port")].value;                            // MQTT
+  _CfgMessage.mqtt_port.trim();                                                 // MQTT
+  _CfgMessage.mqtt_messagedelay = aux[F("mqtt_messagedelay")].value;            // MQTT
+  _CfgMessage.mqtt_messagedelay.trim();                                         // MQTT
+  _CfgMessage.sd_logfilepath = aux[F("sd_logfilepath")].value;                  // SDLogging
+  _CfgMessage.sd_logfilepath.trim();                                            // SDLOgging   
+
+
+  Serial.print("useMQTT: ");                                        // MQTT 
+  Serial.println(_CfgMessage.useMQTT);                              // MQTT
+
+  Serial.print("mqtt_SSID: ");                                      // MQTT 
+  Serial.println(_CfgMessage.mqtt_SSID);                            // MQTT
+
+  Serial.print("mqtt_wifi_pwd: ");                                  // MQTT 
+  Serial.println(_CfgMessage.mqtt_wifi_pwd);                        // MQTT
+
+  Serial.print("mqttusername: ");                                   // MQTT 
+  Serial.println(_CfgMessage.mqttusername);                         // MQTT
+
+  Serial.print("mqttpassword: ");                                   // MQTT 
+  Serial.println(_CfgMessage.mqttpassword);                         // MQTT
+    
+  Serial.print("mqtt_topic: ");                                     // MQTT 
+  Serial.println(_CfgMessage.mqtt_topic);                           // MQTT
+
+  Serial.print("mqtt_server: ");                                    // MQTT 
+  Serial.println(_CfgMessage.mqtt_server);                          // MQTT
+
+  Serial.print("mqtt_server: ");                                    // MQTT 
+  Serial.println(_CfgMessage.mqtt_port);                            // MQTT
+
+  Serial.print("mqtt_messagedelay: ");                              // MQTT 
+  Serial.println(_CfgMessage.mqtt_messagedelay);                    // MQTT
+  
+  Serial.print("sd_logfilepath: ");                                 // SDLogging 
+  Serial.println(_CfgMessage.sd_logfilepath);                       // SDLogging
+  
+  Serial.println("CFG Loaded end");                                  // Autoconnect 
+  Serial.println(" ");                                               // Autoconnect 
+}
 
 void getSensorParams(AutoConnectAux& aux) 
 {
- _CfgDevice.beenodename = aux[F("beenodename")].value;                           // Autoconnect
-  _CfgDevice.beenodename.trim();                                                  // Autoconnect
-  _CfgDevice.hivename = aux[F("hiveid")].value;                                 // Autoconnect
-  _CfgDevice.hivename.trim();                                                     // Autoconnect
-  _CfgDevice.useDeepSleep  = aux[F("useDeepSleep")].as<AutoConnectCheckbox>().checked; // DeepSleep 
-  _CfgDevice.deepSleepTime = aux[F("deepSleepTime")].value.toInt();               // DeepSleep
   _CfgStorage.useTemperatureSensor  = aux[F("useTemperatureSensor")].as<AutoConnectCheckbox>().checked; // Autoconnect 
   _CfgStorage.useVibrationSensor  = aux[F("useVibrationSensor")].as<AutoConnectCheckbox>().checked; // ADXL 
   _CfgStorage.useRTCSensor  = aux[F("useRTCSensor")].as<AutoConnectCheckbox>().checked; // RTC 
@@ -1238,47 +1295,13 @@ void getSensorParams(AutoConnectAux& aux)
   _CfgStorage.acc_usefullres  = aux[F("acc_usefullres")].as<AutoConnectCheckbox>().checked; // ADXL
   AutoConnectRadio& range = aux[F("acc_range")].as<AutoConnectRadio>();           // ADXL
   _CfgStorage.acc_range = range.value().toInt();                                  // ADXL
-  _CfgStorage.useSDLogging = aux[F("useSDLogging")].as<AutoConnectCheckbox>().checked; // SDLogging
-  _CfgStorage.mqtt_server = aux[F("mqtt_server")].value;                          // MQTT
-  _CfgStorage.mqtt_server.trim();                                                 // MQTT
-
- _CfgStorage.useMQTT = aux[F("useMQTT")].as<AutoConnectCheckbox>().checked;    // SDLogging
-  _CfgStorage.mqtt_SSID = aux[F("mqtt_SSID")].value;                            // Autoconnect
-  _CfgStorage.mqtt_SSID.trim();                                                 // MQTT
-  _CfgStorage.mqtt_wifi_pwd = aux[F("mqtt_wifi_pwd")].value;                    // MQTT
-  _CfgStorage.mqtt_wifi_pwd.trim();                                             // MQTT
-  _CfgStorage.mqttusername = aux[F("mqttusername")].value;                      // MQTT
-  _CfgStorage.mqttusername.trim();                                              // MQTT
-  _CfgStorage.mqttpassword = aux[F("mqttpassword")].value;                      // MQTT
-  _CfgStorage.mqttpassword.trim();                                              // MQTT
-  _CfgStorage.mqtt_topic = aux[F("mqtt_topic")].value;                          // MQTT
-  _CfgStorage.mqtt_topic.trim();                                                // MQTT
-  _CfgStorage.mqtt_port = aux[F("mqtt_port")].value;                            // MQTT
-  _CfgStorage.mqtt_port.trim();                                                 // MQTT
-  _CfgStorage.mqtt_messagedelay = aux[F("mqtt_messagedelay")].value;            // MQTT
-  _CfgStorage.mqtt_messagedelay.trim();                                         // MQTT
-  _CfgStorage.sd_logfilepath = aux[F("sd_logfilepath")].value;                  // SDLogging
-  _CfgStorage.sd_logfilepath.trim();                                            // SDLOgging   
- _CfgStorage.useWeigthSensor = aux[F("useWeigthSensor")].as<AutoConnectCheckbox>().checked;       // HDX711  
-  _CfgDevice.sdaio = aux[F("sdaio")].value;                                    // ADXL, RTC
-  _CfgDevice.sdaio.trim();                                                     // ADXL, RTC
-  _CfgDevice.sdlio = aux[F("sdlio")].value;                                    // Autoconnect
-  _CfgDevice.sdlio.trim();                                                     // ADXL, RTC
+  _CfgStorage.useWeigthSensor = aux[F("useWeigthSensor")].as<AutoConnectCheckbox>().checked;       // HDX711  
   _CfgStorage.useTempSensorTwo = aux[F("useTempSensorTwo")].as<AutoConnectCheckbox>().checked;    // BME280
   _CfgStorage.useHumidity = aux[F("useHumidity")].as<AutoConnectCheckbox>().checked;    // BME280
 
-
-  
   Serial.println(" ");                                              // Autoconnect 
   Serial.println("Curren Configuration:");                          // Autoconnect 
-  Serial.print("Bee node name: ");                                  // Autoconnect 
-  Serial.println(_CfgDevice.beenodename);                          // Autoconnect 
-  Serial.print("Hive name: ");                                      // Autoconnect 
-  Serial.println(_CfgDevice.hivename);                             // Autoconnect 
-  Serial.print("Used deep sleep: ");                                // Autoconnect 
-  Serial.println(_CfgDevice.useDeepSleep);                         // Autoconnect 
-  Serial.print("Deep sleep time: ");                                // Autoconnect 
-  Serial.println(_CfgDevice.deepSleepTime);                        // Autoconnect 
+  
   Serial.print("Use temperature sensor: ");                         // Autoconnect 
   Serial.println(_CfgStorage.useTemperatureSensor);                 // Autoconnect 
   Serial.print("Use vibration sensor: ");                           // Autoconnect 
@@ -1294,41 +1317,6 @@ void getSensorParams(AutoConnectAux& aux)
 
   Serial.print("acc_range: ");                                      // Autoconnect 
   Serial.println(_CfgStorage.acc_range);                            // Autoconnect 
-
-  Serial.print("sdaio: ");                                          // ADXL345, RTC  
-  Serial.println(_CfgDevice.sdaio);                                // ADXL345, RTC 
-  Serial.print("sdlio: ");                                          // ADXL345, RTC 
-  Serial.println(_CfgDevice.sdlio);                                // ADXL345, RTC 
-
-  Serial.print("useMQTT: ");                                        // MQTT 
-  Serial.println(_CfgStorage.useMQTT);                              // MQTT
-
-  Serial.print("mqtt_SSID: ");                                      // MQTT 
-  Serial.println(_CfgStorage.mqtt_SSID);                            // MQTT
-
-  Serial.print("mqtt_wifi_pwd: ");                                  // MQTT 
-  Serial.println(_CfgStorage.mqtt_wifi_pwd);                        // MQTT
-
-  Serial.print("mqttusername: ");                                   // MQTT 
-  Serial.println(_CfgStorage.mqttusername);                         // MQTT
-
-  Serial.print("mqttpassword: ");                                   // MQTT 
-  Serial.println(_CfgStorage.mqttpassword);                         // MQTT
-    
-  Serial.print("mqtt_topic: ");                                     // MQTT 
-  Serial.println(_CfgStorage.mqtt_topic);                           // MQTT
-
-  Serial.print("mqtt_server: ");                                    // MQTT 
-  Serial.println(_CfgStorage.mqtt_server);                          // MQTT
-
-  Serial.print("mqtt_server: ");                                    // MQTT 
-  Serial.println(_CfgStorage.mqtt_port);                            // MQTT
-
-  Serial.print("mqtt_messagedelay: ");                              // MQTT 
-  Serial.println(_CfgStorage.mqtt_messagedelay);                    // MQTT
-  
-  Serial.print("sd_logfilepath: ");                                 // SDLogging 
-  Serial.println(_CfgStorage.sd_logfilepath);                       // SDLogging
 
   Serial.print("useTempSensorTwo: ");                          // BME280
   Serial.println(_CfgStorage.useTempSensorTwo);                // BME280
@@ -1367,6 +1355,30 @@ String loadSensorParams(AutoConnectAux& aux, PageArgument& args)      // Autocon
     Serial.println(" open failed");                                   // Autoconnect
   return String("");                                                  // Autoconnect
 }                                                                     // Autoconnect
+
+
+// Load parameters saved with saveParams from SPIFFS into the
+// elements defined in /message_setting JSON.
+String loadMessageParams(AutoConnectAux& aux, PageArgument& args)     // Autoconnect
+{                                                                     // Autoconnect
+  (void)(args);                                                       // Autoconnect
+  Serial.print(PARAM_MESSAGE_FILE);                                   // Autoconnect
+  File param = FlashFS.open(PARAM_MESSAGE_FILE, "r");                 // Autoconnect
+  if (param) {                                                        // Autoconnect
+    if (aux.loadElement(param)) 
+    {                                                                 // Autoconnect
+      getMessageParams(aux);                                          // Autoconnect
+      Serial.println(" loaded");                                      // Autoconnect
+    }                                                                 // Autoconnect
+    else                                                              // Autoconnect
+      Serial.println(" failed to load");                              // Autoconnect
+    param.close();                                                    // Autoconnect
+  }                                                                   // Autoconnect
+  else                                                                // Autoconnect
+    Serial.println(" open failed");                                   // Autoconnect
+  return String("");                                                  // Autoconnect
+}                                                                     // Autoconnect
+  
                                                                                 
 //  aux[F("mqttserver")].value = serverName + String(mqttserver.isValid() ? " (OK)" : " (ERR)"); // Autoconnect
 
@@ -1385,10 +1397,9 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   // To retrieve the elements of /sensor_setting, it is necessary to get
   // the AutoConnectAux object of /sensor_setting.
   File param = FlashFS.open(PARAM_SENSOR_FILE, "w");                        // Autoconnect
-  sensor_setting.saveElement(param, {"beenodename", "hiveid", "useDeepSleep" , "deepSleepTime", "useTemperatureSensor", "useVibrationSensor", "useRTCSensor", +
-                                     "acc_datarate", "acc_range", "acc_usefullres", "sdaio", "sdlio", "useSDLogging", "useMQTT", "mqtt_SSID", "mqtt_wifi_pwd", "mqttusername", "mqttpassword", "mqtt_topic",  +
-                                     "mqtt_server", "mqtt_port", "useWeigthSensor" , "mqtt_messagedelay" , "sd_logfilepath", "useTempSensorTwo",   "useHumidity"
-                                    });     // Autoconnect
+  sensor_setting.saveElement(param, {"useTemperatureSensor", "useVibrationSensor", "useRTCSensor", +
+                                     "acc_datarate", "acc_range", "acc_usefullres", "useSDLogging", +
+                                     "useWeigthSensor" ,"useTempSensorTwo",   "useHumidity"});     // Autoconnect
   param.close();                                                            // Autoconnect
   _CfgDevice.needToReboot = true;                                          // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -1400,17 +1411,6 @@ String saveParamsSensor(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("acc_datarate")].value = _CfgStorage.acc_datarate;                     // Autoconnect
   aux[F("acc_range")].value = _CfgStorage.acc_range;                           // Autoconnect
   aux[F("acc_usefullres")].value = _CfgStorage.acc_usefullres;                 // Autoconnect
-  aux[F("useSDLogging")].value = _CfgStorage.useSDLogging;                     // MQTT
-  aux[F("useMQTT")].value = _CfgStorage.useMQTT;                               // MQTT
-  aux[F("mqtt_topic")].value = _CfgStorage.mqtt_topic;                         // MQTT
-  aux[F("mqtt_SSID")].value = _CfgStorage.mqtt_SSID;                           // MQTT
-  aux[F("mqtt_wifi_pwd")].value = _CfgStorage.mqtt_wifi_pwd;                   // MQTT
-  aux[F("mqttusername")].value = _CfgStorage.mqttusername;                     // MQTT
-  aux[F("mqttpassword")].value = _CfgStorage.mqttpassword;                     // MQTT
-  aux[F("mqtt_server")].value = _CfgStorage.mqtt_server;                       // MQTT
-  aux[F("mqtt_server")].value = _CfgStorage.mqtt_port;                         // MQTT
-  aux[F("mqtt_messagedelay")].value = _CfgStorage.mqtt_messagedelay;           // MQTT
-  aux[F("sd_logfilepath")].value = _CfgStorage.sd_logfilepath;                 // SD Logging
   aux[F("useWeigthSensor")].value = _CfgStorage.useWeigthSensor;               // HDX711
   aux[F("useTempSensorTwo")].value = _CfgStorage.useTempSensorTwo;             // BME280
   aux[F("useHumidity")].value = _CfgStorage.useHumidity;                       // BME280
@@ -1438,31 +1438,6 @@ String loadDeviceParams(AutoConnectAux& aux, PageArgument& args)      // Autocon
     Serial.println(" open failed");                                   // Autoconnect
   return String("");                                                  // Autoconnect
 }        // Autoconnect
-
-
-
-
-// Load parameters saved with saveParams from SPIFFS into the
-// elements defined in /device_settings JSON.
-String loadMessageParams(AutoConnectAux& aux, PageArgument& args)     // Autoconnect
-{                                                                     // Autoconnect
-  (void)(args);                                                       // Autoconnect
-  Serial.print(PARAM_SENSOR_FILE);                                    // Autoconnect
-  File param = FlashFS.open(PARAM_SENSOR_FILE, "r");                  // Autoconnect
-  if (param) {                                                        // Autoconnect
-    if (aux.loadElement(param)) {                                     // Autoconnect
-      getSensorParams(aux);                                           // Autoconnect
-      Serial.println(" loaded");                                      // Autoconnect
-    }                                                                 // Autoconnect
-    else                                                              // Autoconnect
-      Serial.println(" failed to load");                              // Autoconnect
-    param.close();                                                    // Autoconnect
-  }                                                                   // Autoconnect
-  else                                                                // Autoconnect
-    Serial.println(" open failed");                                   // Autoconnect
-  return String("");                                                  // Autoconnect
-}        // Autoconnect
-
                                                                                 
 // Save the value of each element entered by '/device_setting' to the
 // parameter file. The saveParamsSensor as below is a callback function of
@@ -1503,7 +1478,50 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("OneWireBusPin")].value = _CfgDevice.OneWireBusPin;                                   // 
   aux[F("esphostname")].value = _CfgDevice.esphostname;                                  //
   return String();                                                             // Autoconnect
+}      // Autoconnect
+
+
+
+// Save the value of each element entered by '/sensor_setting' to the
+// parameter file. The saveParamsSensor as below is a callback function of
+// /sensor_save. When invoking this handler, the input value of each
+// element is already stored in '/sensor_setting'.
+// In the Sketch, you can output to stream its elements specified by name.
+String saveMessageSensor(AutoConnectAux& aux, PageArgument& args) {         // Autoconnect
+  // The 'where()' function returns the AutoConnectAux that caused
+  // the transition to this page.
+  AutoConnectAux&   message_setting = *portal.aux(portal.where());          // Autoconnect
+  getMessageParams(message_setting);                                         // Autoconnect
+
+  // The entered value is owned by AutoConnectAux of /mqtt_setting.
+  // To retrieve the elements of /sensor_setting, it is necessary to get
+  // the AutoConnectAux object of /sensor_setting.
+  File param = FlashFS.open(PARAM_MESSAGE_FILE, "w");                        // Autoconnect
+  message_setting.saveElement(param, {"useSDLogging", "useMQTT", "mqtt_SSID", "mqtt_wifi_pwd", "mqttusername", "mqttpassword", "mqtt_topic",  +
+                                      "mqtt_server", "mqtt_port", "mqtt_messagedelay" , "sd_logfilepath"});     // Autoconnect
+  param.close();                                                            // Autoconnect
+  _CfgDevice.needToReboot = true;                                          // Autoconnect
+  Serial.println("Need to reboot device");                                  // Autoconnect
+
+  // Echo back saved parameters to AutoConnectAux page.
+  aux[F("useSDLogging")].value = _CfgMessage.useSDLogging;                     // SD Logging
+  aux[F("useMQTT")].value = _CfgMessage.useMQTT;                               // MQTT
+  aux[F("mqtt_topic")].value = _CfgMessage.mqtt_topic;                         // MQTT
+  aux[F("mqtt_SSID")].value = _CfgMessage.mqtt_SSID;                           // MQTT
+  aux[F("mqtt_wifi_pwd")].value = _CfgMessage.mqtt_wifi_pwd;                   // MQTT
+  aux[F("mqttusername")].value = _CfgMessage.mqttusername;                     // MQTT
+  aux[F("mqttpassword")].value = _CfgMessage.mqttpassword;                     // MQTT
+  aux[F("mqtt_server")].value = _CfgMessage.mqtt_server;                       // MQTT
+  aux[F("mqtt_port")].value = _CfgMessage.mqtt_port;                           // MQTT
+  aux[F("mqtt_messagedelay")].value = _CfgMessage.mqtt_messagedelay;           // MQTT
+  aux[F("sd_logfilepath")].value = _CfgMessage.sd_logfilepath;                 // SD Logging
+
+  return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
+
+
+
+
 
 void listAllFiles()
 {

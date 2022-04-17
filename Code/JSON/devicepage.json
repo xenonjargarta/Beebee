@@ -218,8 +218,25 @@
       {
         "name": "caption",
         "type": "ACText",
-        "value": "<h4>You need to reboot the device. Parameters saved as:</h4>",
+        "value": "<h4>You need to reboot the device.</h4>",
         "style": "text-align:center;color:#2f4f4f;padding:10px;"
+      },
+      {
+        "name": "reset",
+        "type": "ACSubmit",
+        "value": "Reset",
+        "uri": "/_ac#rdlg"
+      },
+      {
+        "name": "newline20",
+        "type": "ACElement",
+        "value": "<hr>"
+      },
+      {
+        "name": "caption5",
+        "type": "ACText",
+        "value": "Parameters saved as:",
+        "style": "font-family:serif;color:#4682b4;"
       },
       {
         "name": "beenodename",
