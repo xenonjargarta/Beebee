@@ -152,9 +152,9 @@ String CreateMessage()
         //message += "H1)";                             // ADXL345
         message += _SensorValues.vibration_x;           // ADXL345
         message += "&";                                 // ADXL345
-        message += _SensorValues.vibration_x;           // ADXL345
-        message += "&";                                 // ADXL345
         message += _SensorValues.vibration_y;           // ADXL345
+        message += "&";                                 // ADXL345
+        message += _SensorValues.vibration_z;           // ADXL345
       }                                                 // ADXL345
       message += ";";
       
