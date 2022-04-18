@@ -131,41 +131,57 @@ SensorValues _SensorValues = {"", "", "", "", "", "", "", ""};
 String CreateMessage()
 {
   String message = "";
-  if (_CfgStorage.useRTCSensor)                     // RTC
-  { // RTC
-    //message += "T)";                              // RTC
-    message += _SensorValues.senortime;             // RTC
-  }                                                 // RTC
-  if (_CfgStorage.useVibrationSensor)               // ADXL345
-  { // ADXL345
-    message += ";";                                 // ADXL345
-    //message += "H1)";                             // ADXL345
-    message += _SensorValues.vibration_x;           // ADXL345
-    message += ";";                                 // ADXL345
-    message += _SensorValues.vibration_x;           // ADXL345
-    message += ";";                                 // ADXL345
-    message += _SensorValues.vibration_y;           // ADXL345
-  }                                                 // ADXL345
-  if (_CfgStorage.useTemperatureSensor)             // OneWireTemperatur
-  { // OneWireTemperatur
-    message += ";";                                 // OneWireTemperatur
-    message += _SensorValues.temperatur;            // OneWireTemperatur
-  }                                                 // OneWireTemperatur
-  if (_CfgStorage.useWeigthSensor)                  // HDX117
-  { // HDX117
-    message += ";";                                 // HDX117
-    message += _SensorValues.weigth;                // HDX117
-  }                                                 // HDX117
-  if (_CfgStorage.useTempSensorTwo)                 // BME280
-  { // BME280
-    message += ";";                                 // BME280
-    message += _SensorValues.temperatur2;           // BME280
-  }                                                 // BME280
-  if (_CfgStorage.useHumidity)                      // BME280
-  { // BME280
-    message += ";";                                 // BME280
-    message += _SensorValues.humidity;              // BME280
-  }                                                 // BME280
+  
+  char codingcase = _CfgMessage.msg_coding.charAt(1);
+    
+  switch(codingcase)
+  {
+    case 'l':
+      Serial.println("Plain text coding selected");
+      if (_CfgStorage.useRTCSensor)                     // RTC
+      {                                                 // RTC
+        message += _SensorValues.senortime;             // RTC
+      }                                                 // RTC
+      if (_CfgStorage.useVibrationSensor)               // ADXL345
+      { // ADXL345
+        message += ";";                                 // ADXL345
+        //message += "H1)";                             // ADXL345
+        message += _SensorValues.vibration_x;           // ADXL345
+        message += ";";                                 // ADXL345
+        message += _SensorValues.vibration_x;           // ADXL345
+        message += ";";                                 // ADXL345
+        message += _SensorValues.vibration_y;           // ADXL345
+      }                                                 // ADXL345
+      if (_CfgStorage.useTemperatureSensor)             // OneWireTemperatur
+      { // OneWireTemperatur
+        message += ";";                                 // OneWireTemperatur
+        message += _SensorValues.temperatur;            // OneWireTemperatur
+      }                                                 // OneWireTemperatur
+      if (_CfgStorage.useWeigthSensor)                  // HDX117
+      { // HDX117
+        message += ";";                                 // HDX117
+        message += _SensorValues.weigth;                // HDX117
+      }                                                 // HDX117
+      if (_CfgStorage.useTempSensorTwo)                 // BME280
+      { // BME280
+        message += ";";                                 // BME280
+        message += _SensorValues.temperatur2;           // BME280
+      }                                                 // BME280
+      if (_CfgStorage.useHumidity)                      // BME280
+      { // BME280
+        message += ";";                                 // BME280
+        message += _SensorValues.humidity;              // BME280
+      }                                                 // BME280
+      break;
+    case 'i':
+      Serial.println("Bit coding selected");
+      break;
+    case 'y':
+      Serial.println("Byte coding selected");
+      break;
+    default:
+      break;    
+  }
   return message;
 }
 
