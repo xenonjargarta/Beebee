@@ -30,6 +30,18 @@ client.on('message',function(topic, message, packet)
         {
             publish(myArray[0].trim() + "/temp", myArray[3].trim(), options);
         }
+        if(myArray[4].trim() != "")
+        {
+            publish(myArray[0].trim() + "/weight", myArray[4].trim(), options);
+        }
+        if(myArray[5].trim() != "")
+        {
+            publish(myArray[0].trim() + "/temp2", myArray[5].trim(), options);
+        }
+        if(myArray[6].trim() != "")
+        {
+            publish(myArray[0].trim() + "/hum1", myArray[6].trim(), options);
+        }
     }
     else
     {
