@@ -26,6 +26,16 @@ client.on('message',function(topic, message, packet)
     {
         console.log("Message is correct");
         //publish Temperature (DS18)
+        if(myArray[2].trim() != "")
+        {
+            var vibarray = myArray[2].trim().toString().split("&");
+            if(vibarray.length == 3)
+            {
+                publish(myArray[0].trim() + "/vibx^x", vibarray[0].trim(), options);
+                publish(myArray[0].trim() + "/vibyy", vibarray[1].trim(), options);
+                publish(myArray[0].trim() + "/vibz", vibarray[2].trim(), options);
+            }
+        }
         if(myArray[3].trim() != "")
         {
             publish(myArray[0].trim() + "/temp", myArray[3].trim(), options);
