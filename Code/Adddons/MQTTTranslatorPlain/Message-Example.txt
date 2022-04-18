@@ -1,0 +1,8 @@
+PArt 0content 001
+PArt 1content 14.01.2000/09:43:36
+PArt 2content 0.27&0.27&-0.63
+PArt 3content 23.31
+PArt 4content 6672046.00
+PArt 5content 24.82
+PArt 6content 20.22
+PArt 7content
