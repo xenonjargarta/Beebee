@@ -124,54 +124,64 @@ struct SensorValues
 
 CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", "", ""};
 CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, false, false};
-CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, "", ""};
+CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, "", "l"};
 
 SensorValues _SensorValues = {"", "", "", "", "", "", "", ""};
 
 String CreateMessage()
 {
   String message = "";
-  
   char codingcase = _CfgMessage.msg_coding.charAt(1);
     
   switch(codingcase)
   {
     case 'l':
       Serial.println("Plain text coding selected");
+      // Message part 1; ID
+      message += _CfgDevice.hivename;
+      message += ";";
+      
       if (_CfgStorage.useRTCSensor)                     // RTC
       {                                                 // RTC
         message += _SensorValues.senortime;             // RTC
-      }                                                 // RTC
+      }
+      message += ";";
+      
       if (_CfgStorage.useVibrationSensor)               // ADXL345
       { // ADXL345
-        message += ";";                                 // ADXL345
         //message += "H1)";                             // ADXL345
         message += _SensorValues.vibration_x;           // ADXL345
-        message += ";";                                 // ADXL345
+        message += "&";                                 // ADXL345
         message += _SensorValues.vibration_x;           // ADXL345
-        message += ";";                                 // ADXL345
+        message += "&";                                 // ADXL345
         message += _SensorValues.vibration_y;           // ADXL345
       }                                                 // ADXL345
+      message += ";";
+      
       if (_CfgStorage.useTemperatureSensor)             // OneWireTemperatur
       { // OneWireTemperatur
-        message += ";";                                 // OneWireTemperatur
         message += _SensorValues.temperatur;            // OneWireTemperatur
       }                                                 // OneWireTemperatur
+      message += ";";
+      
       if (_CfgStorage.useWeigthSensor)                  // HDX117
       { // HDX117
-        message += ";";                                 // HDX117
         message += _SensorValues.weigth;                // HDX117
       }                                                 // HDX117
+      message += ";";
+      
       if (_CfgStorage.useTempSensorTwo)                 // BME280
       { // BME280
-        message += ";";                                 // BME280
         message += _SensorValues.temperatur2;           // BME280
       }                                                 // BME280
+      message += ";";
+      
       if (_CfgStorage.useHumidity)                      // BME280
       { // BME280
-        message += ";";                                 // BME280
-        message += _SensorValues.humidity;              // BME280
+        message += _SensorValues.humidity;              // BME280        
       }                                                 // BME280
+      message += ";";
+      
       break;
     case 'i':
       Serial.println("Bit coding selected");
@@ -182,6 +192,11 @@ String CreateMessage()
     default:
       break;    
   }
+  Serial.print("message:"); 
+  Serial.print(message); 
+  Serial.print(" Message length:");
+  Serial.println(message.length());
+  
   return message;
 }
 
@@ -874,8 +889,8 @@ void SetupRTC()
 
 void loop() 
 {
-  delay(_CfgMessage.mqtt_messagedelay.toInt());
   HandleWebPage();                                                    // Autoconnect
+
   if(!_CfgDevice.needToReboot)
   {
     if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo ) { HandleTemperature(); }     // Temperatur
@@ -884,12 +899,13 @@ void loop()
     { HandleCommunication();  }                                       // MQTT, SDLogging
     if(_CfgStorage.useHumidity)  { HandleHumadity();        }         // BME280
     if(_CfgStorage.useRTCSensor) { HandleRTC();             }         // DS3231-RTC
-    if(_CfgDevice.useDeepSleep)  { HandleDeepSleep();       }         // DeepSleep
     if(_CfgDevice.usePowerOff)   { HandlePowerManagement(); }         // PowerOff
+    if(_CfgDevice.useDeepSleep)  { HandleDeepSleep();       }         // DeepSleep
+    if(_CfgMessage.useMQTT) { delay(_CfgMessage.mqtt_messagedelay.toInt()); } // MQTT
   }
   else
   {
-
+        // System waits for reboot just wbepage is enabled
   }
 }
   
@@ -913,7 +929,7 @@ void HandleTemperature()                                    //OneWireTemperature
     Serial.print((char)176);//shows degrees character       //OneWireTemperature
     Serial.print("C  |  ");                                 //OneWireTemperature
   }                                                         //OneWireTemperature
-  if(_CfgStorage.useTempSensorTwo)                     // BME280
+  if(_CfgStorage.useTempSensorTwo)                          // BME280
   {                                                         // BME280
     Serial.print("Temperature = ");                         // BME280
     _SensorValues.temperatur2 = bme.readTemperature();      // BME280
@@ -971,7 +987,7 @@ void HandleCommunication()                                                      
   {                                                                                             // MQTT,
     if(client.isConnected())                                                                    // MQTT,
     {                                                                                           // MQTT,
-      // Subscribe to "mytopic/test" and display received message to Serial
+      // Subscribe to "mytopic/Hives" and display received message to Serial
       // client.subscribe("test/topic", [](const String & payload) { Serial.println(payload); });
     
       // Publish a message                                       
