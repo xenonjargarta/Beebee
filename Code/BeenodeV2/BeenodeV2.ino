@@ -12,13 +12,14 @@
                           (x) Vibration Sensor (ADXL345)
                           (x) Weight Sensor (HX711)
                           (x) Temperature Sensor (DS)
-                          (in progress7) Humadity Sensor ()
+                          (x) Humadity Sensor ()
                           (x) RTC (DS3231)
-                          ( ) Power management
-                          (in progress) Deep Sleep (ESP)
+                          (x) Power management
+                          (x) Deep Sleep (ESP)
                           ( ) Lora Communication
-                          ( ) SIM Communication
+                          (in progress) SIM Communication
                           (x) SD Card
+                          ( ) ESPNOW
 
       Libaries            Express if ESP32 Boards - ESP32 by Espressif Systems - (https://dl.espressif.com/dl/package_esp32_index.json) 1.0.6
                           OneWire 2.3.6
@@ -33,7 +34,7 @@
       Scenario supported: (X) Always On with webserver
                           (X) Sleep on always power
                           ( ) Sleep on battery
-                          ( ) One time st startup
+                          ( ) One time startup
 
 */
 
@@ -215,6 +216,10 @@ String CreateMessage()
 #define CS    15                                              // SDCARD
 #define SEALEVELPRESSURE_HPA (1013.25)                        // BME280
 #define AUTOCONNECT_STARTUPTIME 10
+
+bool devicpageavilable= false;
+bool settingspageavailable = false;
+bool messagepageavilable = false;
 
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
@@ -533,6 +538,7 @@ void SetupAutoConnect()
     loadDeviceParams(device_setting, args);                              // Autoconnect
     portal.on(AUX_DEVICE_SETTING_URI, loadDeviceParams);                 // Autoconnect
     portal.on(AUX_DEVICE_SAVE_URI, saveParamsDevice);                    // Autoconnect
+     devicpageavilable= true;
   }
   else
   {
@@ -550,6 +556,8 @@ void SetupAutoConnect()
     loadSensorParams(sensor_setting, args);                              // Autoconnect
     portal.on(AUX_SENSOR_SETTING_URI, loadSensorParams);                 // Autoconnect
     portal.on(AUX_SENSOR_SAVE_URI, saveParamsSensor);                    // Autoconnect
+    settingspageavailable= true;
+
   }                                                                      // Autoconnect
   sensorpage.close();                                 // Autoconnect
 
@@ -561,6 +569,7 @@ void SetupAutoConnect()
     loadMessageParams(message_setting, args);                              // Autoconnect
     portal.on(AUX_MESSAGE_SETTING_URI, loadMessageParams);                 // Autoconnect
     portal.on(AUX_MESSAGE_SAVE_URI, saveMessageSensor);                    // Autoconnect
+    messagepageavilable = false;
   }                                                                      // Autoconnect
   messagepage.close();                                 // Autoconnect
   SPIFFS.end();                                       // Autoconnect
@@ -891,12 +900,12 @@ void loop()
 {
   HandleWebPage();                                                    // Autoconnect
 
-  if(!_CfgDevice.needToReboot)
+  if(!_CfgDevice.needToReboot && devicpageavilable == true)
   {
     if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo ) { HandleTemperature(); }     // Temperatur
     if(_CfgStorage.useWeigthSensor) { HandleWeigth(); }               // HX711
     if(_CfgStorage.useVibrationSensor && _CfgStorage.setupReadyVibration) { HandleVibration(); }  //ADXL345
-    { HandleCommunication();  }                                       // MQTT, SDLogging
+    if(_CfgMessage.useESPNow || _CfgMessage.useMQTT || _CfgMessage.useSDLogging) { HandleCommunication();  }  // MQTT, SDLogging,ESPNow
     if(_CfgStorage.useHumidity)  { HandleHumadity();        }         // BME280
     if(_CfgStorage.useRTCSensor) { HandleRTC();             }         // DS3231-RTC
     if(_CfgDevice.usePowerOff)   { HandlePowerManagement(); }         // PowerOff
