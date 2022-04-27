@@ -194,7 +194,8 @@
         "value": [
           "Sensor",
           "BController",
-          "Sensor and Controller"
+          "Sensor and Controller",
+          "Simulated Sensor"
         ],
         "label": "",
         "arrange": "vertical"
@@ -245,6 +246,12 @@
         "type": "ACSubmit",
         "value": "Open SSID",
         "uri": "/_ac/open"
+      },
+      {
+        "name": "formatspiff",
+        "type": "ACSubmit",
+        "value": "Format Spiff",
+        "uri": "/format"
       }
     ]
   },

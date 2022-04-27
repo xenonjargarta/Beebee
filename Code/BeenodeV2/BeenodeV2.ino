@@ -20,6 +20,7 @@
                           (in progress) SIM Communication
                           (x) SD Card
                           ( ) ESPNOW
+                          (in progess) DemoMode
 
       Libaries            Express if ESP32 Boards - ESP32 by Espressif Systems - (https://dl.espressif.com/dl/package_esp32_index.json) 1.0.6
                           OneWire 2.3.6
@@ -136,7 +137,26 @@ String CreateMessage()
     
   switch(codingcase)
   {
-    case 'l':
+    /*    case 'l':
+      Serial.println("Plain text coding selected");
+      if (_CfgStorage.useRTCSensor)                     // RTC
+      {                                                 // RTC
+        message += _SensorValues.senortime;             // RTC
+      }
+      message += ";";
+      
+      if (_CfgStorage.useVibrationSensor)               // ADXL345
+      { // ADXL345
+        //message += "H1)";                             // ADXL345
+        message += _SensorValues.vibration_x;           // ADXL345
+        message += ";";                                 // ADXL345
+        message += _SensorValues.vibration_y;           // ADXL345
+        message += ";";                                 // ADXL345
+        message += _SensorValues.vibration_z;           // ADXL345
+      }                                                 // ADXL345
+      break;
+*/      
+ case 'l':
       Serial.println("Plain text coding selected");
       // Message part 1; ID
       message += _CfgDevice.hivename;
@@ -387,6 +407,12 @@ static const char PAGE_DEVICE[] PROGMEM = R"(
       "type": "ACSubmit",
       "value": "Open SSID",
       "uri": "/_ac/open"
+    },
+    {
+      "name": "formatspiff",
+      "type": "ACSubmit",
+      "value": "Format Spiff",
+      "uri": "/format"
     }
   ]
 }
@@ -529,6 +555,25 @@ void SetupLogging()                            // SDLogging
 
 void SetupAutoConnect()
 { 
+
+ // The Web page handler located to /hello
+  server.on("/format", []()
+  {
+    bool formatted = SPIFFS.format();
+ 
+    if(formatted)
+    {
+       server.send(200, "text/html", String(F("<html>""<head><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>"
+                   "<body><h2>Spiff formated you need to reset the device</h2></body>" "</html>"    )));
+    }
+    else
+    {
+      server.send(200, "text/html", String(F("<html>""<head><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>"
+                   "<body><h2>Spiff not formated sucesssfully you need to reset the device</h2></body>" "</html>"    )));
+    }
+
+  });
+  
   SPIFFS.begin();                                     // Autoconnect
   File devicepage = SPIFFS.open("/devicepage.json", "r");  // Autoconnect
   if(portal.load(devicepage))                              // Autoconnect
