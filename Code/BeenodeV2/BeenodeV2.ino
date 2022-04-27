@@ -250,6 +250,7 @@ AutoConnectConfig config("NewBeeNode", "1234567890");         // Autoconnect
 // easily for each page in the post-upload handler.
 AutoConnectAux auxUpload;           // Autoconnect
 AutoConnectAux auxBrowse;           // Autoconnect
+AutoConnectAux auxFormat;           // Autoconnect
 AutoConnectAux auxDev;              // Autoconnect
 RTClib myRTC;                       // DS3231-RTC
 // Setup a oneWire instance to communicate with any OneWire device
@@ -305,6 +306,29 @@ static const char PAGE_UPLOAD[] PROGMEM = R"(
       "type": "ACSubmit",
       "value": "UPLOAD",
       "uri": "/uploaddone"
+    }
+  ]
+}
+)";
+
+// Upload request custom Web page
+static const char PAGE_FORMAT[] PROGMEM = R"(
+{
+  "uri": "/formated",
+  "title": "Format done",
+  "menu": false,
+  "element": [
+    {
+      "name": "caption",
+      "type": "ACText",
+      "value": "<h4>Format done. All configurations removed. You need to reboot the device.</h4>",
+      "style": "text-align:center;color:#2f4f4f;padding:10px;"
+    },
+    {
+      "name": "reset",
+      "type": "ACSubmit",
+      "value": "Reset",
+      "uri": "/_ac#rdlg"
     }
   ]
 }
@@ -563,15 +587,11 @@ void SetupAutoConnect()
  
     if(formatted)
     {
-       server.send(200, "text/html", String(F("<html>""<head><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>"
-                   "<body><h2>Spiff formated you need to reset the device</h2></body>" "</html>"    )));
+      // server.send(200, "text/html", String(F("<html>""<head><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>"
+        //           "<body><h2>Spiff formated you need to reset the device</h2></body>" "</html>"    )));
+        server.send(200, "text/html", String(F("<html><meta http-equiv='refresh' content='0;url=/formated'></head>"
+                         "<body><h2>Spiff formated you need to reset the device</h2></body>" "</html>"    )));
     }
-    else
-    {
-      server.send(200, "text/html", String(F("<html>""<head><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>"
-                   "<body><h2>Spiff not formated sucesssfully you need to reset the device</h2></body>" "</html>"    )));
-    }
-
   });
   
   SPIFFS.begin();                                     // Autoconnect
@@ -625,8 +645,9 @@ void SetupAutoConnect()
   // Attach the custom web pages
   auxUpload.load(PAGE_UPLOAD);   // Autoconnect
   auxBrowse.load(PAGE_BROWSE);   // Autoconnect
+  auxFormat.load(PAGE_FORMAT);   // Autoconnect
   auxBrowse.on(postUpload);      // Autoconnect
-  portal.join({auxUpload, auxBrowse});  // Autoconnect
+  portal.join({auxUpload, auxBrowse, auxFormat});  // Autoconnect
 
   // The handleFileRead callback function provides an echo back of the
   // uploaded file to the client. You can include the uploaded file in
