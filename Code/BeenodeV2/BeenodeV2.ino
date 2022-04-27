@@ -1,9 +1,9 @@
 /*
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1088654/1966080  Bytes (55%)
-                          Used memory for globale variabel 46860 Bytes (14%)
+                          Used programm memory 1090614/1966080  Bytes (55%)
+                          Used memory for globale variabel 47108 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
-                          Still free memory for local variable 280820 Bytes (Max 327680 Bytes)
+                          Still free memory for local variable 280572 Bytes (Max 327680 Bytes)
 
       Features:           (x) Webpage
                           (x) Wifi Lifecycle
