@@ -170,12 +170,12 @@
       {
         "name": "RXPIN",
         "type": "ACInput",
-        "label": "SCK  PIN"
+        "label": "RX  PIN"
       },
       {
         "name": "TXPIN",
         "type": "ACInput",
-        "label": "SCK  PIN"
+        "label": "TX  PIN"
       },
       {
         "name": "newline5",

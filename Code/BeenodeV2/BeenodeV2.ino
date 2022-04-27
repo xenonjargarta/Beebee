@@ -229,11 +229,11 @@ String CreateMessage()
 // Data wire is plugged into digital pin 2 on the Arduino
 #define ONE_WIRE_BUS 19                                       // OneWireTemperatur
 /* Conversion factor for micro seconds to seconds */
-#define uS_TO_S_FACTOR 1000000                                //DeepSleep
-#define SCK   14                                              // SDCARD
+#define uS_TO_S_FACTOR 1000000                                // DeepSleep
+/*#define SCK   14                                            // SDCARD
 #define MISO  12                                              // SDCARD
 #define MOSI  13                                              // SDCARD
-#define CS    15                                              // SDCARD
+#define CS    15                                              // SDCARD*/
 #define SEALEVELPRESSURE_HPA (1013.25)                        // BME280
 #define AUTOCONNECT_STARTUPTIME 10
 
@@ -541,19 +541,31 @@ void setup()
 void SetupLogging()                            // SDLogging
 {                                              // SDLogging
   spi = SPIClass(VSPI);                        // SDLogging
-  spi.begin(SCK, MISO, MOSI, CS);              // SDLogging
-
-  if (!SD.begin(CS,spi,80000000))              // SDLogging
+  
+  spi.begin(_CfgDevice.CLKPIN.toInt(), _CfgDevice.MISOPIN.toInt(), _CfgDevice.MOSIPIN.toInt(), _CfgDevice.CSPIN.toInt());  // SDLogging
+  _CfgMessage.useSDLogging = false;            // SDLogging Set logging to false  SD.begin will enable it after sucessfull launching the sd card
+  if (SD.begin(_CfgDevice.CSPIN.toInt(),spi,80000000))              // SDLogging
   {                                            // SDLogging
-    Serial.println("Card Mount Failed");       // SDLogging
-    _CfgMessage.useSDLogging = false;          // SDLogging
+    Serial.println("Card Mount OK with VSPI"); // SDLogging
+    _CfgMessage.useSDLogging = true;           // SDLogging
   }                                            // SDLogging
-  else                                         // SDLogging
+  else if(SD.begin(_CfgDevice.CSPIN.toInt()))                                        // SDLogging
   {                                            // SDLogging
+    Serial.println("Card Mount OK with default"); // SDLogging
+    _CfgMessage.useSDLogging = true;           // SDLogging
+  } 
+  
+  if(!_CfgMessage.useSDLogging)
+  {
+    Serial.println("Card Mount failed after testing VSPI/default mode"); // SDLogging
+  }
+  else
+  {
     uint8_t cardType = SD.cardType();          // SDLogging
   
     if(cardType == CARD_NONE){                 // SDLogging
       Serial.println("No SD card attached");   // SDLogging
+      _CfgMessage.useSDLogging = false;        // SDLogging
       return;                                  // SDLogging
     }                                          // SDLogging
   
@@ -596,7 +608,7 @@ void SetupAutoConnect()
   
   SPIFFS.begin();                                     // Autoconnect
   File devicepage = SPIFFS.open("/devicepage.json", "r");  // Autoconnect
-  if(portal.load(devicepage))                              // Autoconnect
+  if(portal.load(devicepage))                         // Autoconnect
   {                                                   // Autoconnect
     PageArgument  args;                               // Autoconnect
     AutoConnectAux& device_setting = *portal.aux(AUX_DEVICE_SETTING_URI);// Autoconnect
@@ -1316,7 +1328,7 @@ void getDeviceParams(AutoConnectAux& aux)
   _CfgDevice.TXPIN.trim();                                             // 
 
   _CfgDevice.RXPIN = aux[F("RXPIN")].value;                    // 
-  _CfgDevice.RXPIN.trim();                                             // 
+  _CfgDevice.RXPIN.trim();                                             //   
 
   _CfgDevice.usePowerOff  = aux[F("usePowerOff")].as<AutoConnectCheckbox>().checked; // DeepSleep 
   
@@ -1373,7 +1385,7 @@ void getDeviceParams(AutoConnectAux& aux)
   
   Serial.print("usePowerOff: ");                                          // 
   Serial.println(_CfgDevice.usePowerOff);                                // 
-  
+
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
 
@@ -1652,6 +1664,7 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("RXPIN")].value = _CfgDevice.RXPIN;                                  //
   aux[F("devicetype")].value = _CfgDevice.devicetype;                                  //
   aux[F("usePowerOff")].value = _CfgDevice.usePowerOff;                                  //
+  
 
     
   return String();                                                             // Autoconnect
