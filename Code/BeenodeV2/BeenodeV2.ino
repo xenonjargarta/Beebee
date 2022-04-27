@@ -230,10 +230,6 @@ String CreateMessage()
 #define ONE_WIRE_BUS 19                                       // OneWireTemperatur
 /* Conversion factor for micro seconds to seconds */
 #define uS_TO_S_FACTOR 1000000                                // DeepSleep
-/*#define SCK   14                                            // SDCARD
-#define MISO  12                                              // SDCARD
-#define MOSI  13                                              // SDCARD
-#define CS    15                                              // SDCARD*/
 #define SEALEVELPRESSURE_HPA (1013.25)                        // BME280
 #define AUTOCONNECT_STARTUPTIME 10
 
@@ -352,6 +348,12 @@ static const char PAGE_BROWSE[] PROGMEM = R"(
       "type": "ACSubmit",
       "value": "Reset",
       "uri": "/_ac#rdlg"
+    },
+    {
+      "name": "upload",
+      "type": "ACSubmit",
+      "value": "More to UPLOAD",
+      "uri": "/upload"
     },
     {
       "name": "newline20",
