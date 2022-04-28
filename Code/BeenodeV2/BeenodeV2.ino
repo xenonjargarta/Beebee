@@ -1,6 +1,6 @@
 /*
       Build information:  Used chip: ESP32-D0WDQ6-V3 (revision 3)
-                          Used programm memory 1090614/1966080  Bytes (55%)
+                          Used programm memory 1091034/1966080  Bytes (55%)
                           Used memory for globale variabel 47108 Bytes (14%)
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
                           Still free memory for local variable 280572 Bytes (Max 327680 Bytes)
@@ -58,6 +58,7 @@
 #include <DallasTemperature.h>      // OneWireTemperatur
 #include "EspMQTTClient.h"          // MQTT
 #include <HX711_ADC.h>              // HDX711
+#include "driver/adc.h"
 
 struct CfgDevice {
   String beenodename;             // Autoconnect
@@ -1143,10 +1144,18 @@ void HandleDeepSleep()
   reset occurs.
   */
     Serial.println("Going to sleep now");                                             // DeepSleep
-    delay(1000);                                                                      // DeepSleep
-    Serial.flush();                                                                   // DeepSleep
-    esp_deep_sleep_start();                                                           // DeepSleep
-    Serial.println("This will never be printed");                                     // DeepSleep                                                                                 // DeepSleep
+    delay(100);                                                                      // DeepSleep
+
+     Serial.println("Going to sleep...");
+     WiFi.disconnect(true);
+     WiFi.mode(WIFI_OFF);
+
+
+     adc_power_off();
+     esp_wifi_stop();
+     //esp_bt_controller_disable();                                                    // DeepSleep
+     esp_deep_sleep_start();                                                           // DeepSleep
+     Serial.println("This will never be printed");                                     // DeepSleep                                                                                 // DeepSleep
 }                                                                                     // DeepSleep
 
 void HandlePowerManagement()
