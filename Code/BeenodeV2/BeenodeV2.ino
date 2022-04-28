@@ -5,6 +5,8 @@
                           Setting "Minimal SPIFF (1.9MB APP / with OTA/190KB SPIFF)
                           Still free memory for local variable 280572 Bytes (Max 327680 Bytes)
 
+      First Build Time:   Apr 27 2022 23:37:14
+      
       Features:           (x) Webpage
                           (x) Wifi Lifecycle
                           (x) Configuration management
@@ -236,6 +238,8 @@ String CreateMessage()
 bool devicpageavilable= false;
 bool settingspageavailable = false;
 bool messagepageavilable = false;
+
+TaskHandle_t Task1;
 
 using WiFiWebServer = WebServer;    // Autoconnect
 fs::SPIFFSFS& FlashFS = SPIFFS;     // Autoconnect
@@ -519,7 +523,7 @@ void setup()
   SetupAutoConnect();           // Autoconnect
   Serial.println(GET_CHIPID());        // ESP Console
   Serial.println(GET_HOSTNAME());         // ESP Console  
-
+  SetupTasks();
   if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true || _CfgStorage.useTempSensorTwo == true || _CfgStorage.useHumidity == true) // DS3231-RTC, ADXL234, BME280
    {                                                                             // DS3231-RTC, ADXL234, BME280
     int sda = _CfgDevice.sdaio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234, BME280
@@ -537,6 +541,18 @@ void setup()
   if(_CfgDevice.useDeepSleep)  { SetupDeepSleep(); }              // DeepSleep
   if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo) { SetupTemperature(); }  // Temperatur
   if(_CfgStorage.useWeigthSensor) { SetupWeigth(); }              // Weigth  
+}
+
+void SetupTasks()
+{
+  xTaskCreatePinnedToCore(
+      HandleWebPage, /* Function to implement the task */
+      "Task1", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &Task1,  /* Task handle. */
+      0); /* Core where the task should run */
 }
 
 ////////// Setup function
@@ -978,7 +994,7 @@ void SetupRTC()
 
 void loop() 
 {
-  HandleWebPage();                                                    // Autoconnect
+ // HandleWebPage(); runs on Core 0                                                    // Autoconnect
 
   if(!_CfgDevice.needToReboot && devicpageavilable == true)
   {
@@ -1000,9 +1016,14 @@ void loop()
   
 ////////// Loop Functions 
 
-void HandleWebPage()             // Autoconnect
-{                                // Autoconnect
-    portal.handleClient();       // Autoconnect
+void HandleWebPage(void * parameter)             // Autoconnect
+{  
+    Serial.print("Task1 running on core ");
+    Serial.println(xPortGetCoreID());
+    while(true)
+    {                            // Autoconnect
+      portal.handleClient();     // Autoconnect
+    } 
 }                                // Autoconnect
       
 void HandleTemperature()                                    //OneWireTemperature, BME280
