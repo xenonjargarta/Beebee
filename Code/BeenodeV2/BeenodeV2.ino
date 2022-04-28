@@ -81,6 +81,8 @@ struct CfgDevice {
   String TXPIN;                   // SIM  
   String RXPIN;                   // SIM  
   String devicetype;              // DeviceType
+  bool uselowcpu;                 // ESP32
+  
 };
 
 struct CfgMessage 
@@ -127,7 +129,7 @@ struct SensorValues
   String humidity;        // BME280
 };
 
-CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", "", ""};
+CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", "", "", false};
 CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, false, false};
 CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, "", "l"};
 
@@ -517,11 +519,27 @@ void handleFileRead(void) {
   }
 }
 
+void SetupCPUSpeed()
+{
+  if(_CfgDevice.uselowcpu)
+  {
+    Serial.println("CPU speeg 80mhz");
+    setCpuFrequencyMhz(80);
+  }
+  else
+  {
+    Serial.println("CPU speeg 240mhz");
+    setCpuFrequencyMhz(240);
+  }
+}
+
 void setup() 
 {
-  delay(10);                    // ESP startup
+
   Serial.begin(115200);         // ESP Console
+  delay(10);                    // ESP startup
   SetupAutoConnect();           // Autoconnect
+  SetupCPUSpeed();              // ESP32
   Serial.println(GET_CHIPID());        // ESP Console
   Serial.println(GET_HOSTNAME());         // ESP Console  
   SetupTasks();
@@ -532,6 +550,8 @@ void setup()
       Wire.begin(sda,sdl);                                                       // DS3231-RTC, ADXL234, BME280
       Serial.println("SDA/ SDL done " + _CfgDevice.sdaio + "/" + _CfgDevice.sdlio); // DS3231-RTC, ADXL234, BME280
    }                                                                            // DS3231-RTC, ADXL234, BME280  
+
+
   
   if(_CfgStorage.useVibrationSensor) { SetupVibration(); }        // Vibration
   SetupCommunication();         // MQTT, SDLogging
@@ -1362,6 +1382,7 @@ void getDeviceParams(AutoConnectAux& aux)
   _CfgDevice.RXPIN = aux[F("RXPIN")].value;                    // 
   _CfgDevice.RXPIN.trim();                                             //   
 
+  _CfgDevice.uselowcpu  = aux[F("uselowcpu")].as<AutoConnectCheckbox>().checked; // DeepSleep 
   _CfgDevice.usePowerOff  = aux[F("usePowerOff")].as<AutoConnectCheckbox>().checked; // DeepSleep 
   
   AutoConnectRadio& dr = aux[F("devicetype")].as<AutoConnectRadio>();         // MESSAGE
@@ -1418,6 +1439,9 @@ void getDeviceParams(AutoConnectAux& aux)
   Serial.print("usePowerOff: ");                                          // 
   Serial.println(_CfgDevice.usePowerOff);                                // 
 
+  Serial.print("uselowcpu: ");                                          // 
+  Serial.println(_CfgDevice.uselowcpu);                                // 
+  
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
 
@@ -1671,7 +1695,7 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   File param = FlashFS.open(PARAM_DEVICE_FILE, "w");                        // Autoconnect
   device_setting.saveElement(param, {"beenodename", "hiveid" , "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio",+
                                      "SCKPIN",      "DOUTPIN", "POWEROFFPIN",   "CLKPIN",        "CSPIN", "MOSIPIN",+
-                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN" ,"devicetype" , "usePowerOff"});     // Autoconnect*/
+                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN" ,"devicetype" , "usePowerOff", "uselowcpu"});     // Autoconnect*/
   param.close();                                                            // Autoconnect
   _CfgDevice.needToReboot = true;                                           // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -1696,9 +1720,8 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("RXPIN")].value = _CfgDevice.RXPIN;                                  //
   aux[F("devicetype")].value = _CfgDevice.devicetype;                                  //
   aux[F("usePowerOff")].value = _CfgDevice.usePowerOff;                                  //
-  
-
-    
+  aux[F("uselowcpu")].value = _CfgDevice.uselowcpu;                                  //
+ 
   return String();                                                             // Autoconnect
 }      // Autoconnect
 
@@ -1742,6 +1765,8 @@ String saveMessageSensor(AutoConnectAux& aux, PageArgument& args) {         // A
   aux[F("espnow_receivermac")].value = _CfgMessage.espnow_receivermac;         // ESPNOW
   aux[F("useESPNow")].value = _CfgMessage.useESPNow;                           // ESPNOW
   aux[F("msg_coding")].value = _CfgMessage.msg_coding;                           // ESPNOW
+
+  
   
   return String();                                                             // Autoconnect
 }                                                                              // Autoconnect
