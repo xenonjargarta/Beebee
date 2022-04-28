@@ -82,6 +82,7 @@ struct CfgDevice {
   String RXPIN;                   // SIM  
   String devicetype;              // DeviceType
   bool uselowcpu;                 // ESP32
+  bool use2core;                 // ESP32
   
 };
 
@@ -129,7 +130,7 @@ struct SensorValues
   String humidity;        // BME280
 };
 
-CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", "", "", false};
+CfgDevice  _CfgDevice  = {"", "", false, "", "", false, 30,  false, "", "", "", "", "", "", "", "", "", "", "", "", false ,false};
 CfgStorage _CfgStorage = {false, false, false, false, 3200, false, 16, false, false, false};
 CfgMessage _CfgMessage = { false, "", "", "", "", "", "", "", false, "1000", "/values.txt", false, "", "l"};
 
@@ -535,14 +536,13 @@ void SetupCPUSpeed()
 
 void setup() 
 {
-
   Serial.begin(115200);         // ESP Console
-  delay(10);                    // ESP startup
+  delay(100);                    // ESP startup
   SetupAutoConnect();           // Autoconnect
   SetupCPUSpeed();              // ESP32
-  Serial.println(GET_CHIPID());        // ESP Console
+  Serial.println(GET_CHIPID());           // ESP Console
   Serial.println(GET_HOSTNAME());         // ESP Console  
-  SetupTasks();
+
   if(_CfgStorage.useRTCSensor == true || _CfgStorage.useVibrationSensor == true || _CfgStorage.useTempSensorTwo == true || _CfgStorage.useHumidity == true) // DS3231-RTC, ADXL234, BME280
    {                                                                             // DS3231-RTC, ADXL234, BME280
     int sda = _CfgDevice.sdaio.substring(0,2).toInt();                          // DS3231-RTC, ADXL234, BME280
@@ -551,8 +551,6 @@ void setup()
       Serial.println("SDA/ SDL done " + _CfgDevice.sdaio + "/" + _CfgDevice.sdlio); // DS3231-RTC, ADXL234, BME280
    }                                                                            // DS3231-RTC, ADXL234, BME280  
 
-
-  
   if(_CfgStorage.useVibrationSensor) { SetupVibration(); }        // Vibration
   SetupCommunication();         // MQTT, SDLogging
   if(_CfgDevice.usePowerOff)   { SetupPowerManagement(); }      // Power
@@ -562,6 +560,8 @@ void setup()
   if(_CfgDevice.useDeepSleep)  { SetupDeepSleep(); }              // DeepSleep
   if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo) { SetupTemperature(); }  // Temperatur
   if(_CfgStorage.useWeigthSensor) { SetupWeigth(); }              // Weigth  
+  // if(_CfgDevice.use2core)   { SetupTasks(); }                     // ESP32
+   SetupTasks();
 }
 
 void SetupTasks()
@@ -1015,10 +1015,10 @@ void SetupRTC()
 
 void loop() 
 {
- // HandleWebPage(); runs on Core 0                                                    // Autoconnect
-
+  //if(_CfgDevice.use2core == false){ portal.handleClient(); }         // PowerOff
   if(!_CfgDevice.needToReboot && devicpageavilable == true)
   {
+    
     if(_CfgStorage.useTemperatureSensor || _CfgStorage.useTempSensorTwo ) { HandleTemperature(); }     // Temperatur
     if(_CfgStorage.useWeigthSensor) { HandleWeigth(); }               // HX711
     if(_CfgStorage.useVibrationSensor && _CfgStorage.setupReadyVibration) { HandleVibration(); }  //ADXL345
@@ -1031,7 +1031,7 @@ void loop()
   }
   else
   {
-        // System waits for reboot just wbepage is enabled
+    
   }
 }
   
@@ -1047,19 +1047,19 @@ void HandleWebPage(void * parameter)             // Autoconnect
     } 
 }                                // Autoconnect
       
-void HandleTemperature()                                    //OneWireTemperature, BME280
-{                                                           //OneWireTemperature, BME280
-  if(_CfgStorage.useTemperatureSensor)//OneWireTemperature  //OneWireTemperature
-  {                                                         //OneWireTemperature
+void HandleTemperature()                                    // OneWireTemperature, BME280
+{                                                           // OneWireTemperature, BME280
+  if(_CfgStorage.useTemperatureSensor)//OneWireTemperature  // OneWireTemperature
+  {                                                         // OneWireTemperature
     // Send the command to get temperatures
-    sensors.requestTemperatures();                          //OneWireTemperature
-    _SensorValues.temperatur = sensors.getTempCByIndex(0);  //OneWireTemperature
+    sensors.requestTemperatures();                          // OneWireTemperature
+    _SensorValues.temperatur = sensors.getTempCByIndex(0);  // OneWireTemperature
     //print the temperature in Celsius
-    Serial.print("Temperature: ");                          //OneWireTemperature
-    Serial.print(_SensorValues.temperatur);                 //OneWireTemperature
-    Serial.print((char)176);//shows degrees character       //OneWireTemperature
-    Serial.print("C  |  ");                                 //OneWireTemperature
-  }                                                         //OneWireTemperature
+    Serial.print("Temperature: ");                          // OneWireTemperature
+    Serial.print(_SensorValues.temperatur);                 // OneWireTemperature
+    Serial.print((char)176);//shows degrees character       // OneWireTemperature
+    Serial.print("C  |  ");                                 // OneWireTemperature
+  }                                                         // OneWireTemperature
   if(_CfgStorage.useTempSensorTwo)                          // BME280
   {                                                         // BME280
     Serial.print("Temperature = ");                         // BME280
@@ -1384,6 +1384,7 @@ void getDeviceParams(AutoConnectAux& aux)
 
   _CfgDevice.uselowcpu  = aux[F("uselowcpu")].as<AutoConnectCheckbox>().checked; // DeepSleep 
   _CfgDevice.usePowerOff  = aux[F("usePowerOff")].as<AutoConnectCheckbox>().checked; // DeepSleep 
+  _CfgDevice.use2core  = aux[F("use2core")].as<AutoConnectCheckbox>().checked; // DeepSleep 
   
   AutoConnectRadio& dr = aux[F("devicetype")].as<AutoConnectRadio>();         // MESSAGE
   _CfgDevice.devicetype = dr.value();                                          // MESSAGE
@@ -1441,6 +1442,10 @@ void getDeviceParams(AutoConnectAux& aux)
 
   Serial.print("uselowcpu: ");                                          // 
   Serial.println(_CfgDevice.uselowcpu);                                // 
+
+  Serial.print("use2core: ");                                          // 
+  Serial.println(_CfgDevice.use2core);                                // 
+
   
   Serial.println("CFG Loaded end");                                  // Autoconnect 
   Serial.println(" ");                                               // Autoconnect 
@@ -1695,7 +1700,7 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   File param = FlashFS.open(PARAM_DEVICE_FILE, "w");                        // Autoconnect
   device_setting.saveElement(param, {"beenodename", "hiveid" , "useDeepSleep" , "deepSleepTime", "sdaio", "sdlio",+
                                      "SCKPIN",      "DOUTPIN", "POWEROFFPIN",   "CLKPIN",        "CSPIN", "MOSIPIN",+
-                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN" ,"devicetype" , "usePowerOff", "uselowcpu"});     // Autoconnect*/
+                                     "MISOPIN",     "OneWireBusPin",            "esphostname", "TXPIN", "RXPIN" ,"devicetype" , "usePowerOff", "uselowcpu", "use2core"});     // Autoconnect*/
   param.close();                                                            // Autoconnect
   _CfgDevice.needToReboot = true;                                           // Autoconnect
   Serial.println("Need to reboot device");                                  // Autoconnect
@@ -1707,22 +1712,24 @@ String saveParamsDevice(AutoConnectAux& aux, PageArgument& args) {         // Au
   aux[F("useDeepSleep")].value = _CfgDevice.useDeepSleep;                     // Autoconnect
   aux[F("sdaio")].value = _CfgDevice.sdaio;                                   // AXDL345, RTC
   aux[F("sdlio")].value = _CfgDevice.sdlio;                                   // AXDL345, RTC
-  aux[F("SCKPIN")].value = _CfgDevice.SCKPIN;                       // 
-  aux[F("DOUTPIN")].value = _CfgDevice.DOUTPIN;                             // 
-  aux[F("POWEROFFPIN")].value = _CfgDevice.POWEROFFPIN;                   // 
-  aux[F("CLKPIN")].value = _CfgDevice.CLKPIN;                     // 
+  aux[F("SCKPIN")].value = _CfgDevice.SCKPIN;                                 // 
+  aux[F("DOUTPIN")].value = _CfgDevice.DOUTPIN;                               // 
+  aux[F("POWEROFFPIN")].value = _CfgDevice.POWEROFFPIN;                       // 
+  aux[F("CLKPIN")].value = _CfgDevice.CLKPIN;                                 // 
   aux[F("CSPIN")].value = _CfgDevice.CSPIN;                                   //                                   // 
-  aux[F("MOSIPIN")].value = _CfgDevice.MOSIPIN;                       // 
-  aux[F("MISOPIN")].value = _CfgDevice.MISOPIN;                             // 
-  aux[F("OneWireBusPin")].value = _CfgDevice.OneWireBusPin;                                   // 
-  aux[F("esphostname")].value = _CfgDevice.esphostname;                                  //
+  aux[F("MOSIPIN")].value = _CfgDevice.MOSIPIN;                               // 
+  aux[F("MISOPIN")].value = _CfgDevice.MISOPIN;                               // 
+  aux[F("OneWireBusPin")].value = _CfgDevice.OneWireBusPin;                   // 
+  aux[F("esphostname")].value = _CfgDevice.esphostname;                       //
   aux[F("TXPIN")].value = _CfgDevice.TXPIN;                                   // 
-  aux[F("RXPIN")].value = _CfgDevice.RXPIN;                                  //
-  aux[F("devicetype")].value = _CfgDevice.devicetype;                                  //
+  aux[F("RXPIN")].value = _CfgDevice.RXPIN;                                   //
+  aux[F("devicetype")].value = _CfgDevice.devicetype;                         //
   aux[F("usePowerOff")].value = _CfgDevice.usePowerOff;                                  //
   aux[F("uselowcpu")].value = _CfgDevice.uselowcpu;                                  //
+  aux[F("use2core")].value = _CfgDevice.use2core;                                  //
  
-  return String();                                                             // Autoconnect
+  return String();        
+  // Autoconnect
 }      // Autoconnect
 
 

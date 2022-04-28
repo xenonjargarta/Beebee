@@ -213,6 +213,14 @@
         "checked": false
       },
       {
+        "name": "use2core",
+        "type": "ACCheckbox",
+        "value": "unique",
+        "label": "Use dual core",
+        "checked": false
+      },
+      
+      {
         "name": "newline7",
         "type": "ACElement",
         "value": "<hr>"
@@ -414,6 +422,12 @@
         "name": "uselowcpu",
         "type": "ACText",
         "format": "Use low cpu speed: %s",
+        "posterior": "br"
+      },
+      {
+        "name": "use2core",
+        "type": "ACText",
+        "format": "Use dual core: %s",
         "posterior": "br"
       }
     ]
